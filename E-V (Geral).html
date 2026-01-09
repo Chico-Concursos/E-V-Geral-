@@ -2158,7 +2158,7 @@ header {
   <div class="container">
     <div class="app-container">
 	<header>
-      <h1>EDITAL VERTICALIZADO CHO-2026</h1>
+      <h1 id="header-title">EDITAL VERTICALIZADO</h1>
       <div class="header-user-icon" onclick="toggleUserMenu()" title="Minha Conta">
         <i class="fas fa-user-circle"></i>
       </div>
@@ -2173,18 +2173,25 @@ header {
         <!-- CONTAINER DE LOGIN -->
         <div id="login-container" style="display: flex;">
           <form id="login-form">
-            <h2><i class="fas fa-user-circle"></i> Acesso ao Sistema</h2>
-            <p>Digite o nome do usuário conforme configurado pelo administrador:</p>
-            <input type="text" id="user-name" placeholder="Nome do usuário" required>
-            <button type="submit">
-              <i class="fas fa-sign-in-alt"></i> Acessar
+            <h2 style="color: #D2AC47; margin-bottom: 12px; font-size: 1.2rem;"><i class="fas fa-lock"></i> Acesso Seguro</h2>
+            <p style="margin-bottom: 12px; font-size: 0.85rem;">Digite suas credenciais de aluno:</p>
+            
+            <div style="text-align: left; margin-bottom: 5px;">
+              <label style="font-size: 0.8rem; color: #ccc; margin-left: 2px;">E-mail</label>
+              <input type="email" id="user-email" placeholder="seu@email.com" required style="margin-bottom: 10px;">
+            </div>
+
+            <div style="text-align: left; margin-bottom: 5px;">
+              <label style="font-size: 0.8rem; color: #ccc; margin-left: 2px;">Senha</label>
+              <input type="password" id="user-password" placeholder="Sua senha" required>
+            </div>
+
+            <button type="submit" style="margin-top: 10px;">
+              <i class="fas fa-sign-in-alt"></i> Entrar
               <i class="fas fa-spinner button-spinner" style="display: none;"></i>
             </button>
             <div class="login-spinner" id="login-spinner"></div>
-            <div id="login-error" style="display: none;"></div>
-            <p style="margin-top: 15px; font-size: 0.8rem; color: #888;">
-              <i class="fas fa-info-circle"></i> O nome do usuário deve corresponder exatamente ao configurado na planilha.
-            </p>
+            <div id="login-error" style="display: none; margin-top: 10px; color: #D2AC47;"></div>
           </form>
         </div>
         <!-- CONTEÚDO PRINCIPAL (APÓS LOGIN) -->
@@ -2564,11 +2571,16 @@ header {
 
   <script>
     // --- CONFIGURAÇÃO ---
-let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyX9Tayb_rzQfhUEg1MuJMIaOnsx1BB3u3QHDshhYbyHTY-HceRoAubwe0k0rMtm4F1/exec";
+let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxNTO73rvzmBrZrbSHo7XHJjug2EG7bxpe32q26MpWT5xKrw0cfrXcWWmnjUppVfXnPkA/exec";
 
-    // --- NOVO: Captura o ID da planilha pela URL ---
+    // --- LÓGICA HÍBRIDA DE ID (URL ou LOCALSTORAGE) ---
     const urlParamsId = new URLSearchParams(window.location.search);
-    const SHEET_ID = urlParamsId.get('id');
+    // Tenta pegar da URL, se não tiver, tenta pegar do login salvo no navegador
+    let SHEET_ID = urlParamsId.get('id') || localStorage.getItem('userSpreadsheetId');
+
+    if (!SHEET_ID) {
+        console.warn("Aguardando login para obter ID da planilha.");
+    }
 
     if (!SHEET_ID) {
         // Alerta opcional se quiser avisar que está sem ID
@@ -2630,8 +2642,8 @@ function formatarHoras(decimalHoras) {
   }
 }
     // --- INICIALIZAÇÃO ---
-    // --- INICIALIZAÇÃO ---
     document.addEventListener("DOMContentLoaded", function() {
+      // 1. Configura listener do login
       const loginForm = document.getElementById("login-form");
       if (loginForm) {
         loginForm.addEventListener("submit", function(e) {
@@ -2639,107 +2651,123 @@ function formatarHoras(decimalHoras) {
           login();
         });
       }
+
+      // 2. Tenta recuperar sessão salva
       const savedUser = localStorage.getItem('currentUserName');
+      const savedCourse = localStorage.getItem('userCourseName'); // Recupera nome do curso
+
+      // 3. Se tiver curso salvo, já atualiza o título antes mesmo de carregar os dados
+      if (savedCourse) {
+          const titleEl = document.getElementById('header-title');
+          if(titleEl) titleEl.textContent = savedCourse;
+          document.title = savedCourse;
+      }
+
+      // 4. Se estiver logado, libera o acesso
       if (savedUser) {
         currentUserName = savedUser;
-        
-        // --- CORREÇÃO: Atualiza o NOVO local do nome (Dropdown) ---
         const headerDisplay = document.getElementById('header-user-email');
-        if (headerDisplay) {
-            headerDisplay.textContent = savedUser;
-        }
-        // ----------------------------------------------------------
+        if (headerDisplay) headerDisplay.textContent = savedUser;
 
         document.getElementById('login-container').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
+        
+        // Garante que o ID da planilha esteja carregado
+        if (!SHEET_ID) {
+            SHEET_ID = localStorage.getItem('userSpreadsheetId');
+        }
+        
         loadAllData(true);
       }
     });
 
     // --- SISTEMA DE LOGIN ---
     async function login() {
-      const nameInput = document.getElementById('user-name');
+      const emailInput = document.getElementById('user-email');
+      const passInput = document.getElementById('user-password');
       const errorElement = document.getElementById('login-error');
       const submitButton = document.querySelector('#login-form button[type="submit"]');
       const buttonSpinner = submitButton.querySelector('.button-spinner');
       const buttonIcon = submitButton.querySelector('.fa-sign-in-alt');
       
-      if (nameInput) {
-        const userName = nameInput.value.trim();
-        if (!userName) {
-          errorElement.textContent = 'Por favor, digite o nome do usuário.';
+      if (emailInput && passInput) {
+        const email = emailInput.value.trim();
+        const password = passInput.value.trim();
+
+        if (!email || !password) {
+          errorElement.textContent = 'Preencha e-mail e senha.';
           errorElement.style.display = 'block';
           return;
         }
         
-        // Mostrar spinner e esconder ícone
         setButtonLoading(submitButton, true);
         buttonIcon.style.display = 'none';
         buttonSpinner.style.display = 'inline-block';
         errorElement.style.display = 'none';
         
         try {
-          // --- CORREÇÃO: USANDO POST PARA GARANTIR ENVIO DO ID ---
-          // Prepara os dados para enviar ao Apps Script
-          const payload = {
-            action: 'getUserData', // Alterado de 'read' para 'getUserData' para compatibilidade
-            user: userName,
-            spreadsheetId: SHEET_ID // Envia o ID capturado da URL
-          };
+          const payload = { action: 'login', email: email, password: password };
 
-          // Faz a chamada via POST
           const response = await fetch(WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify(payload)
           });
-          // -------------------------------------------------------
           
-          if (!response.ok) {
-            throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
-          }
-          
+          if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
           const result = await response.json();
-          console.log('Resposta do servidor:', result);
           
-          if (result.error) {
-            // Se houver erro mas os dados existirem, permite o login (fallback)
-            if (result.data && result.data.topics) {
-              console.log('Aviso: Erro reportado mas dados encontrados.');
-            } else {
-              throw new Error(result.error);
-            }
+          if (result.status === 'error' || result.error || result.erro) {
+             throw new Error(result.message || result.error || result.erro);
           }
           
-          // Login bem-sucedido
-          currentUserName = userName;
-          localStorage.setItem('currentUserName', userName);
+         // --- SUCESSO ---
+          const realUserName = result.realUserName || result.nomeUsuario;
+          const userSpreadsheetId = result.spreadsheetId;
+          const userCourseName = result.nomeCurso;
+
+          if (!userSpreadsheetId) throw new Error("Erro: ID da planilha não retornado.");
           
+          // >>> CORREÇÃO AQUI: Atualiza a variável global IMEDIATAMENTE <<<
+          SHEET_ID = userSpreadsheetId; 
+          
+          // 1. Salva dados críticos
+          currentUserName = realUserName;
+		  localStorage.setItem('currentUserName', realUserName);
+		  localStorage.setItem('savedUserEmail', realUserName);      // <--- ADICIONE
+          localStorage.setItem('savedSheetId', userSpreadsheetId);   // <--- ADICIONE
+          localStorage.setItem('savedCourseName', userCourseName);   // <--- ADICIONE
+          localStorage.setItem('userSpreadsheetId', userSpreadsheetId);
+          
+          // 2. Salva e Aplica o Nome do Curso
+          if (userCourseName) {
+              localStorage.setItem('userCourseName', userCourseName);
+              // Atualiza o título imediatamente
+              const titleEl = document.getElementById('header-title');
+              if(titleEl) titleEl.textContent = userCourseName;
+              // Atualiza também o título da aba do navegador
+              document.title = userCourseName;
+          }
+          
+          // 3. Atualiza URL e Interface
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.set('id', userSpreadsheetId);
+          window.history.pushState({}, '', newUrl);
+
           const headerDisplay = document.getElementById('header-user-email');
-          if (headerDisplay) {
-              headerDisplay.textContent = userName;
-          }
+          if (headerDisplay) headerDisplay.textContent = realUserName;
 
           document.getElementById('login-container').style.display = 'none';
           document.getElementById('app-content').style.display = 'block';
-          showNotification('Login realizado com sucesso!');
+          showNotification(`Bem-vindo ao ${userCourseName || 'Sistema'}!`);
           
-          // Carregar dados
           await loadAllData();
+		  showProgressOverviewWithLoading();
           
         } catch (error) {
-          console.error("Erro detalhado no login:", error);
-          
-          if (error.message.includes('Unexpected token') || error.message.includes('JSON')) {
-             errorElement.textContent = 'Erro de comunicação: O ID da planilha pode estar incorreto ou o link inválido.';
-          } else if (error.message.includes('Failed to fetch')) {
-            errorElement.textContent = 'Erro de conexão. Verifique sua internet.';
-          } else {
-            errorElement.textContent = `Erro: ${error.message}`;
-          }
+          console.error("Erro login:", error);
+          errorElement.textContent = error.message;
           errorElement.style.display = 'block';
-          
         } finally {
-          // Restaurar ícone e esconder spinner
           setButtonLoading(submitButton, false);
           buttonIcon.style.display = 'inline-block';
           buttonSpinner.style.display = 'none';
@@ -2748,17 +2776,8 @@ function formatarHoras(decimalHoras) {
     }
 
     function logout() {
-      localStorage.removeItem('currentUserName');
-      currentUserName = null;
-      allTopics = [];
-      filteredTopics = [];
-      currentUserGoals = {};
-      globalMetas = {};
-      agendaData = [];
-      document.getElementById('login-container').style.display = 'flex';
-      document.getElementById('app-content').style.display = 'none';
-      document.getElementById('user-name').value = '';
-      showNotification('Você saiu do sistema.', 'success');
+        localStorage.clear(); // Limpa todos os dados salvos
+        location.reload();    // Recarrega a página para voltar ao login
     }
 
     // --- FUNÇÕES DE INTERFACE ---
@@ -3744,7 +3763,6 @@ function getTopicsForSrsReview(deadline) {
         }
         
         await loadTopics(); // Carrega dados e aplica filtros
-        await loadGlobalMetas(); 
         
         showSection("topics-list-container");
         
@@ -5205,39 +5223,56 @@ params.append("dataFlashcards", dataFlashcards);
 // === FUNÇÕES DE CONTROLE RÁPIDO NA LISTA ===
 
 async function quickToggleEstudo(sequence, element) {
-  if (!currentUserName) {
-    showNotification('Usuário não autenticado.', 'error');
+  console.log("--- Iniciando Tentativa de Salvar (Estudo) ---");
+
+  // 1. Verificação de segurança
+  if (typeof WEB_APP_URL === 'undefined' || !WEB_APP_URL) {
+      alert("ERRO CRÍTICO: WEB_APP_URL não definido.");
+      return;
+  }
+
+  // 2. Blindagem de Dados
+  const user = currentUserName || localStorage.getItem('currentUserName');
+  const sheet = SHEET_ID || localStorage.getItem('userSpreadsheetId') || localStorage.getItem('savedSheetId');
+
+  console.log("Dados usados -> User:", user, " | Sheet:", sheet);
+
+  if (!user || !sheet) {
+    showNotification('Erro: Usuário ou Planilha não identificados.', 'error');
+    element.classList.remove('checked-estudo');
     return;
   }
 
-  // --- LÓGICA OTIMISTA (INSTANTÂNEA) ---
-  // 1. Pega o estado atual visualmente
+  // 3. Lógica Visual (Otimista)
   const isCurrentlyChecked = element.classList.contains('checked-estudo');
   
-  // 2. Aplica a mudança visual IMEDIATAMENTE
   if (isCurrentlyChecked) {
-    element.classList.remove('checked-estudo'); // Desmarca na hora
-    element.textContent = ''; // Remove o check
+    element.classList.remove('checked-estudo');
+    element.textContent = '';
   } else {
-    element.classList.add('checked-estudo'); // Marca na hora
-    element.textContent = '✓'; // Adiciona o check
+    element.classList.add('checked-estudo');
+    element.textContent = '✓';
   }
 
-  // 3. Define os dados para envio em segundo plano
   const newStatus = !isCurrentlyChecked ? 'Concluído' : 'Não Concluído';
   const dataEstudo = !isCurrentlyChecked ? new Date().toISOString().split('T')[0] : '';
 
   try {
     const url = new URL(WEB_APP_URL);
     const params = new URLSearchParams();
-    params.append("action", "update");
-	if (SHEET_ID) params.append("spreadsheetId", SHEET_ID);
-    params.append("userEmail", currentUserName);
+    
+    // >>>>>>> A CORREÇÃO ESTÁ AQUI EMBAIXO <<<<<<<
+    params.append("action", "updateTopicStatus"); // Mudamos de 'update' para 'updateTopicStatus'
+    // >>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<
+    
+    params.append("spreadsheetId", sheet);
+    params.append("userEmail", user);
     params.append("sequence", sequence);
     params.append("statusEstudo", newStatus);
     params.append("dataEstudo", dataEstudo);
     
-    // 4. Envia ao servidor (o usuário já viu o resultado, então isso roda "escondido")
+    console.log("Enviando requisição...");
+    
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -5245,15 +5280,27 @@ async function quickToggleEstudo(sequence, element) {
       redirect: 'follow'
     });
     
-    // Atualiza os contadores em segundo plano
-    loadAllData(false, true); 
+    const resultText = await response.text();
+    console.log("Resposta do Google:", resultText);
+
+    // Tenta ler o JSON para ver se deu erro de lógica no servidor
+    try {
+        const result = JSON.parse(resultText);
+        if(result.status === 'error' || result.error) {
+            throw new Error(result.message || result.error);
+        }
+    } catch(e) {
+        // Se não for JSON, ou se for erro de parse, ignoramos se não for erro explícito
+        if(resultText.includes('"status":"error"')) throw new Error("Erro retornado pelo servidor");
+    }
+
+    console.log("Salvo com sucesso!");
     
   } catch (error) {
-    // 5. SE DER ERRO: Reverte a mudança visual (Desfaz a ação)
-    console.error("Erro:", error);
-    showNotification(`Falha ao salvar: ${error.message}`, 'error');
+    console.error("ERRO AO SALVAR:", error);
+    showNotification(`Erro de conexão: ${error.message}`, 'error');
     
-    // Volta ao estado anterior
+    // Reverte visualmente se der erro
     if (isCurrentlyChecked) {
         element.classList.add('checked-estudo');
         element.textContent = '✓';
@@ -5264,15 +5311,27 @@ async function quickToggleEstudo(sequence, element) {
   }
 }
 async function quickToggleQuestoes(sequence, element) {
-  if (!currentUserName) {
-    showNotification('Usuário não autenticado.', 'error');
+  console.log("--- Iniciando Tentativa de Salvar (Questões) ---");
+
+  // 1. Verificação de segurança
+  if (typeof WEB_APP_URL === 'undefined' || !WEB_APP_URL) {
+      alert("ERRO CRÍTICO: WEB_APP_URL não definido.");
+      return;
+  }
+
+  // 2. Blindagem de Dados
+  const user = currentUserName || localStorage.getItem('currentUserName');
+  const sheet = SHEET_ID || localStorage.getItem('userSpreadsheetId') || localStorage.getItem('savedSheetId');
+
+  if (!user || !sheet) {
+    showNotification('Erro: Usuário ou Planilha não identificados.', 'error');
+    element.classList.remove('checked-questoes');
     return;
   }
 
-  // --- LÓGICA OTIMISTA (INSTANTÂNEA) ---
+  // 3. Lógica Visual (Otimista)
   const isCurrentlyChecked = element.classList.contains('checked-questoes');
   
-  // Aplica visual imediato
   if (isCurrentlyChecked) {
     element.classList.remove('checked-questoes');
     element.textContent = '';
@@ -5287,27 +5346,35 @@ async function quickToggleQuestoes(sequence, element) {
   try {
     const url = new URL(WEB_APP_URL);
     const params = new URLSearchParams();
-    params.append("action", "update");
-	if (SHEET_ID) params.append("spreadsheetId", SHEET_ID);
-    params.append("userEmail", currentUserName);
+    
+    // --- CORREÇÃO DO NOME DA AÇÃO ---
+    params.append("action", "updateTopicStatus"); 
+    // --------------------------------
+    
+    params.append("spreadsheetId", sheet);
+    params.append("userEmail", user);
     params.append("sequence", sequence);
     params.append("statusQuestoes", newStatus);
     params.append("dataQuestoes", dataQuestoes);
     
-    await fetch(url, {
+    console.log("Enviando Questões...");
+    
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params,
       redirect: 'follow'
     });
     
-    loadAllData(false, true);
+    // Apenas loga o resultado, não recarrega a página
+    const resultText = await response.text();
+    console.log("Resposta Questões:", resultText);
     
   } catch (error) {
-    console.error("Erro:", error);
-    showNotification(`Falha ao salvar: ${error.message}`, 'error');
+    console.error("ERRO QUESTÕES:", error);
+    showNotification(`Erro ao salvar: ${error.message}`, 'error');
     
-    // Reverte em caso de erro
+    // Reverte visualmente
     if (isCurrentlyChecked) {
         element.classList.add('checked-questoes');
         element.textContent = '✓';
@@ -5318,15 +5385,22 @@ async function quickToggleQuestoes(sequence, element) {
   }
 }
  async function quickToggleFlashcards(sequence, element) {
-  if (!currentUserName) {
-    showNotification('Usuário não autenticado.', 'error');
+  console.log("--- Iniciando Tentativa de Salvar (Flashcards) ---");
+
+  if (typeof WEB_APP_URL === 'undefined' || !WEB_APP_URL) return;
+
+  const user = currentUserName || localStorage.getItem('currentUserName');
+  const sheet = SHEET_ID || localStorage.getItem('userSpreadsheetId') || localStorage.getItem('savedSheetId');
+
+  if (!user || !sheet) {
+    showNotification('Erro: Usuário ou Planilha não identificados.', 'error');
+    element.classList.remove('checked-flashcards');
     return;
   }
 
-  // --- LÓGICA OTIMISTA (INSTANTÂNEA) ---
+  // Lógica Visual
   const isCurrentlyChecked = element.classList.contains('checked-flashcards');
 
-  // Aplica visual imediato
   if (isCurrentlyChecked) {
     element.classList.remove('checked-flashcards');
     element.textContent = '';
@@ -5341,27 +5415,30 @@ async function quickToggleQuestoes(sequence, element) {
   try {
     const url = new URL(WEB_APP_URL);
     const params = new URLSearchParams();
-    params.append("action", "update");
-	if (SHEET_ID) params.append("spreadsheetId", SHEET_ID);
-    params.append("userEmail", currentUserName);
+    
+    // --- CORREÇÃO DO NOME DA AÇÃO ---
+    params.append("action", "updateTopicStatus");
+    // --------------------------------
+    
+    params.append("spreadsheetId", sheet);
+    params.append("userEmail", user);
     params.append("sequence", sequence);
     params.append("statusFlashcards", newStatus);
     params.append("dataFlashcards", dataFlashcards);
     
-    await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params,
       redirect: 'follow'
     });
     
-    loadAllData(false, true);
+    console.log("Flashcards salvos.");
     
   } catch (error) {
-    console.error("Erro:", error);
-    showNotification(`Falha ao salvar: ${error.message}`, 'error');
+    console.error("ERRO FLASHCARDS:", error);
+    showNotification(`Erro ao salvar: ${error.message}`, 'error');
     
-    // Reverte em caso de erro
     if (isCurrentlyChecked) {
         element.classList.add('checked-flashcards');
         element.textContent = '✓';
@@ -5411,41 +5488,47 @@ async function saveRevisaoPopup(sequence) {
   if (!input) return;
   const count = parseInt(input.value) || 0;
 
-  if (!currentUserName) {
-    showNotification('Usuário não autenticado.', 'error');
+  console.log("--- Iniciando Tentativa de Salvar (Revisões Popup) ---");
+
+  // 1. Verificação de segurança
+  if (typeof WEB_APP_URL === 'undefined' || !WEB_APP_URL) {
+      alert("ERRO CRÍTICO: WEB_APP_URL não definido.");
+      return;
+  }
+
+  // 2. Blindagem de Dados
+  const user = currentUserName || localStorage.getItem('currentUserName');
+  const sheet = SHEET_ID || localStorage.getItem('userSpreadsheetId') || localStorage.getItem('savedSheetId');
+
+  if (!user || !sheet) {
+    showNotification('Erro: Usuário ou Planilha não identificados.', 'error');
     closeRevisaoPopup();
     return;
   }
 
-  // --- 1. UI OTIMISTA: ATUALIZAÇÃO IMEDIATA ---
-  
-  // A. Fecha o popup na hora
+  // --- 3. UI OTIMISTA: ATUALIZAÇÃO IMEDIATA NA TELA ---
   closeRevisaoPopup();
 
-  // B. Encontra a linha do tópico no HTML
   const topicRow = document.querySelector(`.topic-item[data-sequence="${sequence}"]`);
   
-  // C. Atualiza o contador visualmente
   if (topicRow) {
+      // A. Atualiza contador visual
       const counterElement = topicRow.querySelector('.quick-revisao-counter');
       if (counterElement) {
           counterElement.textContent = count;
-          // Ajusta a cor (verde se > 0)
           if (count > 0) counterElement.classList.add('has-revisoes');
           else counterElement.classList.remove('has-revisoes');
       }
 
-      // D. Atualiza o dado na memória local
+      // B. Atualiza memória local
       const topic = allTopics.find(t => t.Seq == sequence);
       if (topic) {
           topic['Revisao Count'] = count;
-          const hojeISO = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+          const hojeISO = new Date().toISOString().split('T')[0];
           if(count > 0) topic['Data Revisão'] = hojeISO;
           
-          // E. Atualiza visualmente a coluna "Rev" (Última Revisão)
-          // No layout tabular, procuramos o span da coluna do meio
+          // C. Atualiza visualmente a Data
           const spansData = topicRow.querySelectorAll('.topic-content + div > div:first-child span[style*="#fff"]');
-          // spansData[0] = Data Estudo, spansData[1] = Data Revisão
           if(spansData.length >= 2 && count > 0) {
               const d = new Date();
               const dia = String(d.getDate()).padStart(2, '0');
@@ -5454,19 +5537,17 @@ async function saveRevisaoPopup(sequence) {
               spansData[1].textContent = `${dia}/${mes}/${ano}`;
           }
 
-          // F. Recalcula e Atualiza a DATA PROX (Harmônico com o sistema)
+          // D. Recalcula Próxima Revisão
           try {
               const intervalosSRS = {'Fácil':[2,6,14,30,60], 'Médio':[1,3,7,15,30], 'Difícil':[1,2,4,8,15]};
               const nivel = topic['Dificuldade'] || 'Médio';
               const serie = intervalosSRS[nivel] || intervalosSRS['Médio'];
               
               let novaDataTexto = 'Fim';
-              let novaCor = '#4CAF50'; // Verde
+              let novaCor = '#4CAF50'; 
 
               if (count < serie.length) {
-                  // Se count > 0, base é hoje. Se 0, base é estudo.
                   const baseDateStr = (count > 0) ? hojeISO : topic['Data Estudo'];
-                  
                   if(baseDateStr) {
                       const diasAdd = serie[count];
                       const dataBase = new Date(baseDateStr + 'T12:00:00');
@@ -5477,16 +5558,13 @@ async function saveRevisaoPopup(sequence) {
                       const aProx = String(dataBase.getFullYear()).slice(2);
                       novaDataTexto = `${dProx}/${mProx}/${aProx}`;
                       
-                      // Checa status da data
                       const hoje = new Date(); hoje.setHours(0,0,0,0); dataBase.setHours(0,0,0,0);
-                      if(hoje > dataBase) novaCor = '#ff5555'; // Atrasado
-                      else if(hoje.getTime() === dataBase.getTime()) novaCor = '#F7EF8A'; // Hoje
+                      if(hoje > dataBase) novaCor = '#ff5555'; 
+                      else if(hoje.getTime() === dataBase.getTime()) novaCor = '#F7EF8A';
                   } else {
                       novaDataTexto = '—';
                   }
               }
-
-              // Injeta no HTML (Procura o elemento da Próxima Revisão na 3ª coluna)
               const spanProx = topicRow.querySelector('div[style*="column"] span[style*="font-weight: bold"]');
               if(spanProx) {
                   spanProx.innerText = novaDataTexto;
@@ -5496,32 +5574,33 @@ async function saveRevisaoPopup(sequence) {
       }
   }
 
-  // --- 2. SALVAMENTO EM SEGUNDO PLANO ---
-  const url = new URL(WEB_APP_URL);
-  const params = new URLSearchParams();
-  params.append("action", "update");
-  if (typeof SHEET_ID !== 'undefined' && SHEET_ID) params.append("spreadsheetId", SHEET_ID);
-  params.append("userEmail", currentUserName);
-  params.append("sequence", sequence);
-  params.append("statusRevisao", count > 0 ? 'Concluído' : 'Não Concluído');
-  params.append("dataRevisao", count > 0 ? new Date().toISOString().split('T')[0] : '');
-  params.append("revisaoCount", count);
-  
-  fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params,
-    redirect: 'follow'
-  })
-  .then(response => response.json())
-  .then(result => {
-    if (result.error) throw new Error(result.error);
-    console.log("Salvo com sucesso (Background)");
-  })
-  .catch(error => {
-    console.error("Erro ao salvar background:", error);
+  // --- 4. SALVAMENTO NA NUVEM ---
+  try {
+      const url = new URL(WEB_APP_URL);
+      const params = new URLSearchParams();
+      
+      params.append("action", "updateTopicStatus"); // Comando correto
+      
+      params.append("spreadsheetId", sheet);
+      params.append("userEmail", user);
+      params.append("sequence", sequence);
+      params.append("revisaoCount", count);
+      params.append("statusRevisao", count > 0 ? 'Concluído' : 'Não Concluído');
+      params.append("dataRevisao", count > 0 ? new Date().toISOString().split('T')[0] : '');
+      
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params,
+        redirect: 'follow'
+      });
+      
+      console.log("Revisão salva.");
+
+  } catch (error) {
+    console.error("Erro ao salvar revisão:", error);
     showNotification(`Falha ao salvar: ${error.message}`, 'error');
-  });
+  }
 }
     // --- FUNÇÕES DA AGENDA (FASE 2 COMPLETA) ---
 
