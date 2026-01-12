@@ -505,17 +505,16 @@ header {
 
 /* Mini popup para editar revisões */
 .revisao-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: absolute; /* Mudado de fixed para absolute */
+  /* Removemos top/left/transform fixos para definir via JS */
   background: #111;
   border: 2px solid #D2AC47;
   border-radius: 8px;
-  padding: 20px;
+  padding: 15px;
   z-index: 2000;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  min-width: 280px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+  min-width: 50px;
+  max-width: 180px;
 }
 
 .revisao-popup h4 {
@@ -817,8 +816,9 @@ header {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start; /* ALTERADO: Alinha ao topo */
       padding: 25px;
+      padding-top: 60px; /* NOVO: Espaço do topo para não colar no teto */
       text-align: center;
       height: 100%;
     }
@@ -1617,7 +1617,97 @@ header {
 
     /* Responsividade */
     @media (max-width: 768px) {
-	/* === CORREÇÃO CRÍTICA DO LOGIN MOBILE === */
+	/* === HARMONIA DE FONTES MOBILE === */
+      
+      /* 1. Reduz o Título Principal (estava muito grande) */
+      header h1 {
+          font-size: 1.3rem !important; /* Reduzido de 1.8rem */
+          margin-bottom: 2px;
+      }
+      header p {
+          font-size: 0.75rem !important;
+      }
+
+      /* 2. Ajusta Títulos dos Modais */
+      .modal h3, #agendaModal h3 {
+          font-size: 1.1rem !important; /* Mais compacto */
+      }
+
+      /* 3. Ajusta botões do Menu para não quebrarem linha */
+      .top-bar button {
+          font-size: 0.85rem !important;
+          padding: 8px 10px !important;
+      }
+
+      /* 4. Melhora leitura na Agenda Semanal (Grade) */
+      .week-grid {
+          font-size: 0.75rem !important; /* Texto menor para caber os 7 dias */
+      }
+      .day-header {
+          font-size: 0.7rem !important; /* Cabeçalho dos dias compacto */
+          padding: 4px !important;
+      }
+      .period-header {
+          font-size: 0.9rem !important; /* Manhã/Tarde/Noite */
+          padding: 4px !important;
+      }
+      
+      /* 5. Ajusta tamanho do texto dentro dos blocos de estudo */
+      .study-block strong {
+          font-size: 0.75rem !important; /* Disciplina */
+      }
+      .agenda-block-title {
+          font-size: 0.7rem !important; /* Tópico */
+          line-height: 1.1;
+      }
+      /* === NOVO MENU HAMBÚRGUER E TOQUE === */
+      .mobile-menu-btn {
+        display: flex !important; /* Mostra o botão apenas no mobile */
+      }
+      
+      .top-bar {
+        display: none; /* Esconde a barra normal por padrão */
+        flex-direction: column;
+        background: #111;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        padding: 15px;
+        z-index: 1000;
+        border-bottom: 2px solid #D2AC47;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      }
+
+      .top-bar.active {
+        display: flex; /* Mostra quando ativo */
+        max-height: 80vh; /* Limita altura */
+        overflow-y: auto; /* Permite rolar se tiver muitos botões */
+      }
+
+      .top-bar button, .search-container {
+        width: 100% !important; /* Botões ocupam largura total */
+        max-width: none !important;
+        margin-bottom: 10px;
+        justify-content: flex-start; /* Alinha texto à esquerda */
+      }
+
+      /* Estilo do Bloco Selecionado (Toque para Mover) */
+      .study-block.mobile-selected {
+        border: 2px solid #F7EF8A !important;
+        box-shadow: 0 0 15px rgba(247, 239, 138, 0.5);
+        transform: scale(1.02);
+        z-index: 100;
+        animation: pulseSelect 1s infinite;
+      }
+      
+      @keyframes pulseSelect {
+        0% { box-shadow: 0 0 5px rgba(247, 239, 138, 0.5); }
+        50% { box-shadow: 0 0 20px rgba(247, 239, 138, 0.8); }
+        100% { box-shadow: 0 0 5px rgba(247, 239, 138, 0.5); }
+      }
+
+      /* === CORREÇÃO CRÍTICA DO LOGIN MOBILE === */
       /* 1. Libera a rolagem da tela no celular (essencial para teclados virtuais) */
       body {
           overflow-y: auto !important;
@@ -2152,6 +2242,53 @@ header {
   background: transparent;
   color: #FFC107;
 }
+/* --- SKELETON SCREENS (UI OTIMISTA) --- */
+/* Sobrescreve o estilo centralizado padrão apenas quando necessário */
+#loading-message.skeleton-mode {
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.skeleton-item {
+  background: #111;
+  border-bottom: 1px solid #333;
+  padding: 15px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 65px;
+}
+
+.skeleton-box {
+  background: linear-gradient(90deg, #222 25%, #333 50%, #222 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-text-lg {
+  height: 14px;
+  width: 60%;
+  margin-bottom: 8px;
+}
+
+.skeleton-text-sm {
+  height: 10px;
+  width: 30%;
+}
+
+.skeleton-controls {
+  height: 24px;
+  width: 100px;
+  border-radius: 12px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
   </style>
 </head>
 <body>
@@ -2196,7 +2333,11 @@ header {
         </div>
         <!-- CONTEÚDO PRINCIPAL (APÓS LOGIN) -->
         <div id="app-content" style="display: none;">
-          <div class="top-bar">
+          <button class="mobile-menu-btn" onclick="toggleMobileMenu()" style="display: none; background: transparent; border: 2px solid #D2AC47; color: #D2AC47; font-size: 1.4rem; padding: 6px 10px; border-radius: 6px; margin-bottom: 10px; cursor: pointer; align-items: center; justify-content: center;">
+        <i class="fas fa-bars"></i>
+          </button>
+
+          <div class="top-bar" id="mainTopBar">
             <button onclick="showProgressOverviewWithLoading()">
               <i class="fas fa-chart-bar"></i> Visão Geral
               <i class="fas fa-spinner button-spinner" style="display: none;"></i>
@@ -2237,9 +2378,49 @@ header {
             </div>
           </div>
           <div id="main-container">
-            <div id="loading-message">
-              <i class="fas fa-spinner"></i>
-              <p>Carregando progresso...</p>
+            <div id="loading-message" class="skeleton-mode">
+              <div class="skeleton-item">
+                <div style="width: 70%">
+                   <div class="skeleton-box skeleton-text-lg"></div>
+                   <div class="skeleton-box skeleton-text-sm"></div>
+                </div>
+                <div class="skeleton-box skeleton-controls"></div>
+              </div>
+              <div class="skeleton-item">
+                <div style="width: 70%">
+                   <div class="skeleton-box skeleton-text-lg" style="width: 40%"></div>
+                   <div class="skeleton-box skeleton-text-sm" style="width: 20%"></div>
+                </div>
+                <div class="skeleton-box skeleton-controls"></div>
+              </div>
+              <div class="skeleton-item">
+                <div style="width: 70%">
+                   <div class="skeleton-box skeleton-text-lg" style="width: 80%"></div>
+                   <div class="skeleton-box skeleton-text-sm"></div>
+                </div>
+                <div class="skeleton-box skeleton-controls"></div>
+              </div>
+              <div class="skeleton-item">
+                <div style="width: 70%">
+                   <div class="skeleton-box skeleton-text-lg" style="width: 50%"></div>
+                   <div class="skeleton-box skeleton-text-sm"></div>
+                </div>
+                <div class="skeleton-box skeleton-controls"></div>
+              </div>
+               <div class="skeleton-item">
+                <div style="width: 70%">
+                   <div class="skeleton-box skeleton-text-lg" style="width: 60%"></div>
+                   <div class="skeleton-box skeleton-text-sm"></div>
+                </div>
+                <div class="skeleton-box skeleton-controls"></div>
+              </div>
+               <div class="skeleton-item">
+                <div style="width: 70%">
+                   <div class="skeleton-box skeleton-text-lg" style="width: 45%"></div>
+                   <div class="skeleton-box skeleton-text-sm"></div>
+                </div>
+                <div class="skeleton-box skeleton-controls"></div>
+              </div>
             </div>
             <div id="error-message" style="display:none;"></div>
             <div class="content-area">
@@ -3008,7 +3189,7 @@ function formatarHoras(decimalHoras) {
                  onclick="quickToggleEstudo('${topic.Seq}', this)">${estudoStatus ? '✓' : ''}</div>
             
             <div class="quick-revisao-counter ${revisaoStatus ? 'has-revisoes' : ''}" 
-                 onclick="openRevisaoPopup('${topic.Seq}', ${revisaoCount})">${revisaoCount}</div>
+                 onclick="openRevisaoPopup(event,'${topic.Seq}', ${revisaoCount})">${revisaoCount}</div>
             
             <div class="quick-checkbox ${questoesStatus ? 'checked-questoes' : ''}" 
                  onclick="quickToggleQuestoes('${topic.Seq}', this)">${questoesStatus ? '✓' : ''}</div>
@@ -3832,7 +4013,17 @@ function getTopicsForSrsReview(deadline) {
         populateDisciplineFilter();
         filterTopics(); 
         updateTopicCounter();
-        
+        // --- NOVO: PRÉ-CARREGAMENTO SILENCIOSO DA AGENDA ---
+        // Aguarda 3 segundos após o carregamento principal e busca a agenda em background
+        setTimeout(() => {
+            if (!window.agendaDataLoaded) { // Só busca se o usuário ainda não tiver aberto a agenda
+                loadAgendaData().then(() => {
+                    window.agendaDataLoaded = true; // Marca como carregado na memória
+                    // console.log("Agenda pré-carregada com sucesso em background.");
+                }).catch(e => {}); // Se falhar no background, silencia o erro (tentará de novo ao clicar)
+            }
+        }, 3000); 
+        // ---------------------------------------------------
       } catch (error) {
         console.error("Erro ao carregar tópicos:", error);
         // Exibe erro na tela apenas se não for um erro silencioso de recarga
@@ -5449,10 +5640,15 @@ async function quickToggleQuestoes(sequence, element) {
   }
 }
 
-function openRevisaoPopup(sequence, currentCount) {
-  // Cria backdrop
+// Função atualizada para posicionar a caixa ao lado do clique
+function openRevisaoPopup(event, sequence, currentCount) {
+  // Previne que o clique propague (opcional, mas bom para segurança)
+  if(event) event.stopPropagation();
+
+  // Cria backdrop (fundo escuro) transparente para fechar ao clicar fora
   const backdrop = document.createElement('div');
   backdrop.className = 'popup-backdrop';
+  backdrop.style.background = 'transparent'; // Transparente para parecer um menu suspenso
   backdrop.onclick = () => closeRevisaoPopup();
   
   // Cria popup
@@ -5460,20 +5656,53 @@ function openRevisaoPopup(sequence, currentCount) {
   popup.className = 'revisao-popup';
   popup.id = 'revisao-popup';
   popup.innerHTML = `
-    <h4><i class="fas fa-sync-alt"></i> Quantidade de Revisões</h4>
+    <h4 style="margin:0 0 10px 0; font-size:0.9rem;"><i class="fas fa-sync-alt"></i> Atualizar Revisões</h4>
     <input type="number" id="revisao-input" min="0" value="${currentCount}" 
+           style="width: 100%; margin-bottom: 10px;"
            onkeypress="if(event.key==='Enter') saveRevisaoPopup('${sequence}')">
-    <div class="revisao-popup-buttons">
-      <button class="btn-modal-cancel" onclick="closeRevisaoPopup()">Cancelar</button>
-      <button class="btn-modal-confirm" onclick="saveRevisaoPopup('${sequence}')">Salvar</button>
+    <div class="revisao-popup-buttons" style="justify-content: space-between;">
+      <button class="btn-modal-cancel" onclick="closeRevisaoPopup()" style="font-size:0.75rem; padding:4px 8px;">Cancelar</button>
+      <button class="btn-modal-confirm" onclick="saveRevisaoPopup('${sequence}')" style="font-size:0.75rem; padding:4px 8px;">Salvar</button>
     </div>
   `;
   
   document.body.appendChild(backdrop);
   document.body.appendChild(popup);
+
+  // --- LÓGICA DE POSICIONAMENTO ---
+  if (event && event.target) {
+      const rect = event.target.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+      // Posiciona logo ACIMA do elemento clicado
+      // Pega a altura da caixa criada para subtrair corretamente
+      const popupHeight = popup.offsetHeight; 
+      let topPos = rect.top + scrollTop - popupHeight - 10; // 10px de espaço visual
+      let leftPos = rect.left + scrollLeft - 100; // Ajusta um pouco para a esquerda para centralizar
+
+      // Correção simples para não sair da tela (direita)
+      if (leftPos + 220 > window.innerWidth) {
+          leftPos = window.innerWidth - 230;
+      }
+      // Correção para não sair da tela (esquerda)
+      if (leftPos < 10) leftPos = 10;
+
+      popup.style.top = topPos + 'px';
+      popup.style.left = leftPos + 'px';
+  } else {
+      // Fallback: Se não tiver evento, centraliza (segurança)
+      popup.style.position = 'fixed';
+      popup.style.top = '50%';
+      popup.style.left = '50%';
+      popup.style.transform = 'translate(-50%, -50%)';
+  }
   
   // Foca no input
-  setTimeout(() => document.getElementById('revisao-input').select(), 100);
+  setTimeout(() => {
+      const input = document.getElementById('revisao-input');
+      if(input) input.select();
+  }, 100);
 }
 
 function closeRevisaoPopup() {
@@ -5893,7 +6122,7 @@ async function saveRevisaoPopup(sequence) {
         // Adiciona as caixas de horário para cada dia da semana
         days.forEach(day => {
             gridHTML += `
-                <div class="time-slot" data-day="${day}" data-period="${period}" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)">
+                <div class="time-slot" data-day="${day}" data-period="${period}" onclick="handleMobileSlotClick(this)" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)">
                     <div class="slot-content" id="slot-${day}-${period}"></div>
                     <button onclick="openBlockModal('${day}', '${period}')" class="add-block-btn" title="Adicionar Bloco">+</button>
                 </div>
@@ -6111,7 +6340,8 @@ function generateStudyBlock(blockData) {
     // --- FIM DA SOLUÇÃO DEFINITIVA ---
 
     return `
-        <div class="study-block" 
+      <div class="study-block" 
+            onclick="handleMobileBlockClick(event, '${blockId}')"
             id="${blockId}"
             data-disciplina="${blockData.Disciplina}"
             data-topico="${topicId}"
@@ -7481,6 +7711,86 @@ function closeGenerateOptionsModal() {
 
     // Corrige problemas de rolagem enquanto arrasta
     window.addEventListener('touchmove', function() {}, { passive: false });
+	// ========================================================
+// >>>>> NOVA LÓGICA MOBILE (MENU & AGENDA) <<<<<
+// ========================================================
+
+// 1. Alternar Menu Hambúrguer e Auto-Fechamento
+function toggleMobileMenu() {
+    const menu = document.getElementById('mainTopBar');
+    menu.classList.toggle('active');
+}
+
+// CORREÇÃO: Adiciona evento para fechar o menu ao clicar em qualquer botão dentro dele
+// Colocamos isso dentro de um setTimeout para garantir que o elemento já existe
+setTimeout(function() {
+    const menuContainer = document.getElementById('mainTopBar');
+    if (menuContainer) {
+        menuContainer.addEventListener('click', function(e) {
+            // Se o elemento clicado for um BOTÃO ou um ÍCONE dentro de um botão
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                // Fecha o menu removendo a classe ativa
+                menuContainer.classList.remove('active');
+            }
+        });
+    }
+}, 500);
+
+// Variável global para armazenar o bloco selecionado no mobile
+let mobileSelectedBlockId = null;
+
+// 2. Manipulador de Clique no Bloco (Substitui Drag&Drop no Mobile)
+function handleMobileBlockClick(event, blockId) {
+    // Só ativa se for tela pequena (Mobile)
+    if (window.innerWidth > 768) return; 
+    
+    event.stopPropagation(); // Impede cliques indesejados
+    
+    const block = document.getElementById(blockId);
+    
+    // Se clicou no mesmo bloco, deseleciona
+    if (mobileSelectedBlockId === blockId) {
+        block.classList.remove('mobile-selected');
+        mobileSelectedBlockId = null;
+        showNotification('Seleção cancelada.', 'warning');
+        return;
+    }
+    
+    // Remove seleção anterior, se houver
+    if (mobileSelectedBlockId) {
+        const prevBlock = document.getElementById(mobileSelectedBlockId);
+        if (prevBlock) prevBlock.classList.remove('mobile-selected');
+    }
+    
+    // Seleciona o novo
+    mobileSelectedBlockId = blockId;
+    block.classList.add('mobile-selected');
+    showNotification('Toque em um horário vazio para mover.', 'success');
+}
+
+// 3. Manipulador de Clique no Slot (Destino do movimento)
+function handleMobileSlotClick(slotElement) {
+    // Só ativa se for tela pequena E se tiver um bloco selecionado
+    if (window.innerWidth > 768 || !mobileSelectedBlockId) return;
+    
+    const block = document.getElementById(mobileSelectedBlockId);
+    if (!block) return;
+    
+    // Move o bloco visualmente
+    const dropZone = slotElement.querySelector('.slot-content');
+    if (dropZone) {
+        dropZone.appendChild(block);
+        
+        // Limpa a seleção visual
+        block.classList.remove('mobile-selected');
+        mobileSelectedBlockId = null;
+        
+        // Atualiza os dados internos (importante para salvar)
+        updateAgendaData();
+        showNotification('Bloco movido com sucesso!', 'success');
+    }
+}
+// ========================================================
 </script>
 </body>
 </html>
