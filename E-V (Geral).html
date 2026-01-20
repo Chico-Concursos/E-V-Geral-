@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-  /* --- Versão 113 --- */
+  /* --- Versão 117 --- */
   /* --- ESTILO PARA O NOVO TÍTULO --- */
 header {
   text-align: center;
@@ -112,6 +112,7 @@ header {
       justify-content: center;
       align-items: flex-start;
 	  overflow-y: hidden;
+      overflow-x: hidden; /* CORREÇÃO: Remove a barra de rolagem horizontal (Estilo V113) */
     }
     .container {
       width: 100%;
@@ -146,7 +147,7 @@ header {
     .progress-app {
       background: linear-gradient(to bottom, #1a1a1a, #111);
       border-radius: 8px;
-      padding: 12px;
+      padding:4px 12px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
       min-height: 420px;
       border: 1px solid #333;
@@ -180,7 +181,7 @@ header {
   margin-bottom: 12px;
   align-items: center;
   justify-content: flex-start;
-  overflow-x: auto;
+  overflow-x: hidden;
   padding-bottom: 4px;
 }
 .top-bar > * {
@@ -224,15 +225,15 @@ header {
   padding: 6px 5px !important;
   font-size: 0.8rem !important;
 }
-/* Container de busca fixo */
+/* Container de busca fixo - AJUSTADO PARA NOVO FILTRO */
 .search-container {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 230px;
-  flex: 0 0 auto;
+  width: auto;
+  flex: 1;
   min-width: 200px;
-  max-width: 240px;
+  max-width: 600px;
 }
 .top-bar input[type="text"],
 .top-bar select {
@@ -315,7 +316,7 @@ header {
       display: flex;
       flex-direction: column;
       /* Muda de altura fixa (650px) para cálculo dinâmico: 100% da tela menos cabeçalho */
-      height: calc(100vh - 150px); 
+      height: calc(100vh - 120px); 
       gap: 12px;
     }
     .content-area {
@@ -347,6 +348,7 @@ header {
     #topics-list {
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden; /* CORREÇÃO: Bloqueia rolagem horizontal na lista */
       list-style: none;
       background: #000000;
     }
@@ -2371,6 +2373,274 @@ header {
   height: 300px;
   position: relative;
 }
+/* --- BOTÃO DE FILTRO ICONIZADO --- */
+.filter-icon-wrapper {
+  position: relative; /* Para segurar o select invisível dentro */
+  width: 36px;       /* Largura fixa pequena */
+  height: 36px;      /* Altura fixa */
+  background: linear-gradient(135deg, #D2AC47, #F7EF8A, #AE8625); /* Mesmo gradiente dos outros botões */
+  border-radius: 50%; /* Formato circular */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  flex-shrink: 0; /* Impede que o botão seja esmagado se faltar espaço */
+  margin-left: 5px;
+}
+
+.filter-icon-wrapper:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  background: linear-gradient(135deg, #F4E883, #D2AC47, #AE8625);
+}
+
+.filter-icon-wrapper i {
+  color: #0D0D09; /* Cor do ícone */
+  font-size: 1rem;
+  pointer-events: none; /* O clique passa pelo ícone e vai para o select */
+}
+
+/* O Select Invisível que fica por cima */
+.filter-icon-wrapper select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0; /* Totalmente transparente */
+  cursor: pointer;
+  appearance: none; /* Remove seta padrão do navegador */
+  -webkit-appearance: none;
+  z-index: 10; /* Garante que fique no topo */
+  padding: 0;
+  border: none;
+}
+
+/* --- BUSCA FLUTUANTE (MODAL CORRIGIDO) --- */
+.search-wrapper {
+  position: relative; /* O modal vai se basear na posição deste ícone */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;  /* Largura fixa pequena */
+  height: 32px; /* Altura fixa pequena */
+}
+
+.search-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-btn:hover {
+  color: #D2AC47;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* O MODAL FLUTUANTE (A MÁGICA ACONTECE AQUI) */
+.search-input-modal {
+  display: none; /* Começa escondido */
+  position: absolute;
+  top: 45px; /* Empurra para baixo do ícone */
+  right: -50px; /* Ajuste lateral para não sair da tela */
+  width: 240px; /* Largura da janelinha */
+  background: #1a1a1a;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #D2AC47;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.8); /* Sombra forte para destacar */
+  z-index: 9999; /* Garante que fique POR CIMA de tudo */
+}
+
+/* Quando ativo (via JS), ele aparece */
+.search-wrapper.active .search-input-modal {
+  display: block;
+  animation: fadeInDown 0.2s ease-out;
+}
+
+.search-input-modal input {
+  width: 100%;
+  background: #333;
+  border: 1px solid #555;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.search-input-modal input:focus {
+  border-color: #D2AC47;
+}
+
+/* Animação suave */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* --- BARRA SUPERIOR: ALINHAMENTO CENTRAL PERFEITO --- */
+.top-bar {
+  display: flex !important;
+  align-items: center !important; /* Centro matemático vertical */
+  justify-content: space-between !important;
+  flex-wrap: nowrap !important;
+  overflow: visible !important;
+  
+  /* CONTAINER: A altura será definida pelo conteúdo + padding */
+  height: auto !important;       
+  padding: 5px 6px !important;    /* 5px em cima e 5px em baixo exatos */
+  
+  gap: 8px;
+  position: relative;
+  z-index: 500;
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  background: transparent; /* Garante que não haja cor de fundo estranha */
+}
+
+/* Grupo da Esquerda */
+.left-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center !important; 
+  height: auto !important;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.left-buttons::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+/* --- REGRA DE OURO: TODOS OS ITENS COM A MESMA ALTURA --- */
+.top-bar button,               /* Botões Amarelos */
+.search-wrapper,               /* Wrapper da Lupa */
+.filter-icon-wrapper,          /* Wrapper do Filtro */
+#disciplineFilter,             /* Select de Disciplina */
+.search-btn {                  /* Botão da Lupa interno */
+  
+  height: 26px !important;     /* ALTURA UNIFICADA PARA TODOS */
+  min-height: 26px !important;
+  max-height: 26px !important;
+  
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;        /* Remove margens invisíveis */
+  line-height: 1 !important;   /* Evita que texto empurre a altura */
+  vertical-align: middle !important;
+}
+
+/* Ajustes específicos para o conteúdo interno */
+.left-buttons button {
+  padding: 0 12px !important;
+  font-size: 0.8rem !important;
+  border-radius: 50px !important;
+  gap: 6px;
+}
+
+/* Ajustes para os ícones quadrados da direita */
+.search-wrapper, 
+.filter-icon-wrapper {
+  width: 26px !important;      /* Quadrados perfeitos 26x26 */
+  padding: 0 !important;
+  border-radius: 50% !important; /* Círculos perfeitos */
+}
+
+/* Ajuste do Select de Disciplina (precisa ser mais largo) */
+#disciplineFilter {
+  width: auto !important;
+  max-width: 140px;
+  padding: 0 8px !important;   /* Espaço lateral para o texto não colar */
+  border-radius: 50px !important;
+}
+
+/* Grupo da Direita */
+.right-controls {
+  display: flex;
+  align-items: center !important;
+  gap: 6px;
+  margin-left: auto;
+  height: auto !important;
+}
+
+/* Correção de ícones FontAwesome que podem ter line-height próprio */
+.top-bar i {
+  line-height: 0 !important;
+  display: inline-block !important;
+}
+
+/* Modal Flutuante de Busca */
+.search-input-modal {
+  display: none;
+  position: absolute !important;
+  top: 40px !important;           /* Ajustado para não cobrir a barra */
+  right: 0 !important;
+  width: 240px;
+  background: #111;
+  border: 1px solid #D2AC47;
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.9);
+  z-index: 9999 !important;
+}
+.search-wrapper.active .search-input-modal { display: block; }
+.search-input-modal input { width: 100%; font-size: 0.85rem; padding: 6px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
+/* --- ESTILO PARA OVERLAY DE CARREGAMENTO DA AGENDA --- */
+#agenda-loading-overlay {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0, 0, 0, 0.85);
+display: flex;
+justify-content: center;
+align-items: center;
+z-index: 9999;
+backdrop-filter: blur(2px);
+transition: opacity 0.3s ease;
+}
+
+.loading-content {
+text-align: center;
+background: rgba(30, 30, 30, 0.9);
+padding: 30px 40px;
+border-radius: 10px;
+border: 1px solid #D2AC47;
+box-shadow: 0 0 20px rgba(210, 172, 71, 0.5);
+max-width: 90%;
+width: 400px;
+}
+
+.spinner-large {
+width: 50px;
+height: 50px;
+border: 5px solid rgba(210, 172, 71, 0.3);
+border-radius: 50%;
+border-top-color: #D2AC47;
+margin: 0 auto 20px;
+animation: spin 1s linear infinite;
+}
+
+.loading-subtext {
+color: #aaa;
+font-size: 0.85rem;
+margin-top: 8px;
+}
+
+@keyframes spin {
+to { transform: rotate(360deg); }
+}
+/* --- FIM DO ESTILO DO OVERLAY --- */
   </style>
 </head>
 <body>
@@ -2420,43 +2690,48 @@ header {
           </button>
 
           <div class="top-bar" id="mainTopBar">
-            <button onclick="showProgressOverviewWithLoading()">
-              <i class="fas fa-chart-bar"></i> Visão Geral
-              <i class="fas fa-spinner button-spinner" style="display: none;"></i>
-            </button>
-            <button onclick="showIndividualProgressOverviewWithLoading()">
-              <i class="fas fa-chart-bar"></i> Minha Visão Geral
-              <i class="fas fa-spinner button-spinner" style="display: none;"></i>
-            </button>
-            <button onclick="openUserGoalsModal()">
-              <i class="fas fa-bullseye"></i> Minhas Metas
-              <i class="fas fa-spinner button-spinner" style="display: none;"></i>
-            </button>
-            <button onclick="showRaioXOverviewWithLoading()">
-              <i class="fas fa-binoculars"></i> Raio X do Edital
-              <i class="fas fa-spinner button-spinner" style="display: none;"></i>
-            </button>
-            <!-- NOVO BOTÃO DADOS -->
-            <button onclick="showDadosOverviewWithLoading()">
-  <i class="fas fa-database"></i> Dados
-  <i class="fas fa-spinner button-spinner" style="display: none;"></i>
-</button>
-<button onclick="showEstatisticasMetasWithLoading()">
-  <i class="fas fa-chart-line"></i> Estatísticas
-  <i class="fas fa-spinner button-spinner" style="display: none;"></i>
-</button>
-<!-- NOVO BOTÃO AGENDA -->
-<button onclick="showAgendaWithLoading()">
-  <i class="fas fa-calendar-alt"></i> Agenda
-  <i class="fas fa-spinner button-spinner" style="display: none;"></i>
-</button>
-<div class="search-container">
-              <div class="search-expanded">
-                <input type="text" id="searchInput" placeholder="Tópicos" oninput="filterTopics()">
-              </div>
-              <select id="disciplineFilter" onchange="filterTopics()">
+            
+            <div class="left-buttons">
+                <button onclick="showProgressOverviewWithLoading()"><i class="fas fa-chart-bar"></i> Visão Geral</button>
+                <button onclick="showIndividualProgressOverviewWithLoading()"><i class="fas fa-chart-bar"></i> Minha Visão</button>
+                <button onclick="openUserGoalsModal()"><i class="fas fa-bullseye"></i> Metas</button>
+                <button onclick="showRaioXOverviewWithLoading()"><i class="fas fa-binoculars"></i> Raio X</button>
+                <button onclick="showDadosOverviewWithLoading()"><i class="fas fa-database"></i> Dados</button>
+                <button onclick="showEstatisticasMetasWithLoading()"><i class="fas fa-chart-line"></i> Estatísticas</button>
+                <button onclick="showAgendaWithLoading()"><i class="fas fa-calendar-alt"></i> Agenda</button>
+            </div>
+            
+            <div class="right-controls">
+              
+              <select id="disciplineFilter" onchange="filterTopics()" style="max-width: 140px; height: 32px; padding: 0 8px;">
                 <option value="">Todas as Disciplinas</option>
               </select>
+
+              <div class="search-wrapper" id="expandableSearch">
+                <button class="search-btn" onclick="toggleSearch()" title="Pesquisar">
+                  <i class="fas fa-search"></i>
+                </button>
+                
+                <div class="search-input-modal">
+                    <input type="text" id="searchInput" placeholder="Digite para buscar..." oninput="filterTopics()">
+                </div>
+              </div>
+
+              <div class="filter-icon-wrapper" title="Filtrar por Status" style="width: 32px; height: 32px;"> <i class="fas fa-filter"></i>
+                <select id="statusFilter" onchange="filterTopics()">
+                  <option value="" selected disabled hidden>Filtrar</option>
+                  <option value="">🔄 Ver Todos</option>
+                  <option value="estudado">✅ Estudados</option>
+                  <option value="nao_estudado">⬜ Não Estudados</option>
+                  <option value="revisado">🔄 Revisados</option>
+                  <option value="nao_revisado">⬜ Não Revisados</option>
+                  <option value="questoes">❓ Questões Feitas</option>
+                  <option value="nao_questoes">⬜ Questões Pendentes</option>
+                  <option value="flashcards">⚡ Flashcards Feitos</option>
+                  <option value="nao_flashcards">⬜ Flashcards Pendentes</option>
+                </select>
+              </div>
+
             </div>
           </div>
           <div id="main-container">
@@ -3262,6 +3537,11 @@ function formatarHoras(decimalHoras) {
       const listElement = document.getElementById("topics-list");
       if (listElement) {
         listElement.innerHTML = "";
+        
+        // --- OTIMIZAÇÃO INÍCIO: Cria um fragmento de memória (caixa invisível) ---
+        const fragment = document.createDocumentFragment(); 
+        // ------------------------------------------------------------------------
+
         filteredTopics.forEach(topic => {
           const listItem = document.createElement("li");
           listItem.className = "topic-item";
@@ -3270,164 +3550,148 @@ function formatarHoras(decimalHoras) {
           }
           listItem.dataset.sequence = topic.Seq;
           
-          // Ícones de status - COM AS SUBSTITUIÇÕES APLICADAS
+          // Ícones de status
           const estudoStatus = topic['Status Estudo'] === 'Concluído';
-          const revisaoStatus = topic['Revisao Count'] > 0; // ✅ SUBSTITUIÇÃO APLICADA
-          const revisaoCount = topic['Revisao Count'] || 0; // ✅ SUBSTITUIÇÃO APLICADA
+          const revisaoStatus = topic['Revisao Count'] > 0;
+          const revisaoCount = topic['Revisao Count'] || 0;
           const questoesStatus = topic['Status Questões'] === 'Concluído';
-		  const flashcardsStatus = topic['Status Flashcards'] === 'Concluído';
+          const flashcardsStatus = topic['Status Flashcards'] === 'Concluído';
 
-// Conteúdo do tópico
-// [CÓDIGO NOVO E LIMPO - COPIE E COLE ISTO]
+          // 1. Formatador de Data com Ano (DD/MM/AA)
+          const fmtData = (dt) => {
+              if(!dt) return '—';
+              const parts = dt.split('-'); // YYYY-MM-DD
+              if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0].slice(2)}`;
+              return '—';
+          };
 
-// Conteúdo do tópico
-// --- INÍCIO: VISUAL TABULAR E LÓGICA CORRIGIDA (BASE NA ÚLTIMA AÇÃO) ---
-    
-    // 1. Formatador de Data com Ano (DD/MM/AA)
-    const fmtData = (dt) => {
-        if(!dt) return '—';
-        const parts = dt.split('-'); // YYYY-MM-DD
-        if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0].slice(2)}`;
-        return '—';
-    };
+          // 2. Lógica SRS Corrigida (Baseada na Última Ação)
+          let dataProxRevisao = '—';
+          let corProxRevisao = '#aaa'; 
+          
+          if (topic['Data Estudo']) {
+              const intervalosSRS = {
+                  'Fácil':  [2, 6, 14, 30, 60],
+                  'Médio':  [1, 3, 7, 15, 30],
+                  'Difícil': [1, 2, 4, 8, 15]
+              };
+              
+              const nivel = topic['Dificuldade'] || 'Médio';
+              const count = parseInt(topic['Revisao Count'] || 0);
+              const serie = intervalosSRS[nivel] || intervalosSRS['Médio'];
 
-    // 2. Lógica SRS Corrigida (Baseada na Última Ação)
-    let dataProxRevisao = '—';
-    let corProxRevisao = '#aaa'; 
-    
-    if (topic['Data Estudo']) {
-        const intervalosSRS = {
-            'Fácil':  [2, 6, 14, 30, 60],
-            'Médio':  [1, 3, 7, 15, 30],
-            'Difícil': [1, 2, 4, 8, 15]
-        };
-        
-        const nivel = topic['Dificuldade'] || 'Médio';
-        const count = parseInt(topic['Revisao Count'] || 0);
-        const serie = intervalosSRS[nivel] || intervalosSRS['Médio'];
+              if (count < serie.length) {
+                  const baseDateStr = (count > 0 && topic['Data Revisão']) ? topic['Data Revisão'] : topic['Data Estudo'];
+                  const diasParaAdicionar = serie[count];
+                  const dataBase = new Date(baseDateStr + 'T12:00:00');
+                  dataBase.setDate(dataBase.getDate() + diasParaAdicionar);
+                  
+                  const d = String(dataBase.getDate()).padStart(2, '0');
+                  const m = String(dataBase.getMonth() + 1).padStart(2, '0');
+                  const a = String(dataBase.getFullYear()).slice(2);
+                  dataProxRevisao = `${d}/${m}/${a}`;
 
-        if (count < serie.length) {
-            // A CORREÇÃO ESTÁ AQUI:
-            // Se já teve revisão, calcula a próxima baseada na 'Data Revisão'.
-            // Se nunca revisou, calcula baseada na 'Data Estudo'.
-            const baseDateStr = (count > 0 && topic['Data Revisão']) ? topic['Data Revisão'] : topic['Data Estudo'];
-            
-            const diasParaAdicionar = serie[count];
-            const dataBase = new Date(baseDateStr + 'T12:00:00'); // Hora fixa para não quebrar fuso
-            dataBase.setDate(dataBase.getDate() + diasParaAdicionar);
-            
-            const d = String(dataBase.getDate()).padStart(2, '0');
-            const m = String(dataBase.getMonth() + 1).padStart(2, '0');
-            const a = String(dataBase.getFullYear()).slice(2);
-            dataProxRevisao = `${d}/${m}/${a}`;
+                  const hoje = new Date();
+                  hoje.setHours(0,0,0,0);
+                  dataBase.setHours(0,0,0,0);
+                  
+                  if (hoje > dataBase) corProxRevisao = '#ff5555'; 
+                  else if (hoje.getTime() === dataBase.getTime()) corProxRevisao = '#F7EF8A'; 
+                  else corProxRevisao = '#4CAF50'; 
+              } else {
+                  dataProxRevisao = 'Fim';
+                  corProxRevisao = '#4CAF50';
+              }
+          }
 
-            // Cores
-            const hoje = new Date();
-            hoje.setHours(0,0,0,0);
-            dataBase.setHours(0,0,0,0);
-            
-            if (hoje > dataBase) corProxRevisao = '#ff5555'; // Atrasado
-            else if (hoje.getTime() === dataBase.getTime()) corProxRevisao = '#F7EF8A'; // Hoje
-            else corProxRevisao = '#4CAF50'; // Futuro
-        } else {
-            dataProxRevisao = 'Fim';
-            corProxRevisao = '#4CAF50';
-        }
-    }
+          // 3. HTML Layout Tabular
+          let diffClass = '';
+          let diffIcon = '<i class="fas fa-minus" style="font-size: 0.6rem;"></i>';
+          const nivelDiff = topic['Dificuldade'];
+          
+          if (nivelDiff === 'Fácil') { 
+              diffClass = 'diff-facil'; 
+              diffIcon = '<i class="fas fa-smile"></i>'; 
+          } else if (nivelDiff === 'Médio') { 
+              diffClass = 'diff-medio'; 
+              diffIcon = '<i class="fas fa-meh"></i>'; 
+          } else if (nivelDiff === 'Difícil') { 
+              diffClass = 'diff-dificil'; 
+              diffIcon = '<i class="fas fa-dizzy"></i>'; 
+          }
 
-    // 3. HTML Layout Tabular (Lado a Lado)
-    // 3. HTML Layout Tabular (Lado a Lado) - ATUALIZADO COM DIFICULDADE
-    // Lógica para definir ícone e classe da dificuldade atual
-    let diffClass = '';
-    let diffIcon = '<i class="fas fa-minus" style="font-size: 0.6rem;"></i>'; // Ícone padrão (traço)
-    const nivelDiff = topic['Dificuldade'];
-    
-    if (nivelDiff === 'Fácil') { 
-        diffClass = 'diff-facil'; 
-        diffIcon = '<i class="fas fa-smile"></i>'; 
-    } else if (nivelDiff === 'Médio') { 
-        diffClass = 'diff-medio'; 
-        diffIcon = '<i class="fas fa-meh"></i>'; 
-    } else if (nivelDiff === 'Difícil') { 
-        diffClass = 'diff-dificil'; 
-        diffIcon = '<i class="fas fa-dizzy"></i>'; 
-    }
-
-    const topicContent = `
-      <div class="topic-content">
-        <div class="topic-discipline">${topic.Disciplinas ? topic.Disciplinas : "Sem disciplina"}</div>
-        <div class="topic-title">
-          ${topic.Seq} - ${topic.Tópicos || "Sem título"}
-        </div>
-        ${topic.Subtópicos && topic.Subtópicos !== '—' ? `<div class="topic-subtopic">${topic.Subtópicos}</div>` : ''}
-      </div>
-      
-      <div style="display: flex; align-items: center; gap: 15px;">
-        
-        <div style="display: flex; gap: 12px; margin-right: 5px;">
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <span style="font-size: 0.6rem; color: #aaa; text-transform: uppercase;">Est</span>
-                <span id="date-est-${topic.Seq}" style="font-size: 0.75rem; color: #fff;">${fmtData(topic['Data Estudo'])}</span>
+          const topicContent = `
+            <div class="topic-content">
+              <div class="topic-discipline">${topic.Disciplinas ? topic.Disciplinas : "Sem disciplina"}</div>
+              <div class="topic-title">
+                ${topic.Seq} - ${topic.Tópicos || "Sem título"}
+              </div>
+              ${topic.Subtópicos && topic.Subtópicos !== '—' ? `<div class="topic-subtopic">${topic.Subtópicos}</div>` : ''}
             </div>
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <span style="font-size: 0.6rem; color: #aaa; text-transform: uppercase;">Rev</span>
-                <span id="date-rev-${topic.Seq}" style="font-size: 0.75rem; color: #fff;">${fmtData(topic['Data Revisão'])}</span>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <span style="font-size: 0.6rem; color: #aaa; text-transform: uppercase;">Prox</span>
-                <span id="date-prox-${topic.Seq}" style="font-size: 0.75rem; font-weight: bold; color: ${corProxRevisao};">${dataProxRevisao}</span>
-            </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-          <div style="display: flex; gap: 6px; font-size: 0.7rem; color: #FFF; font-weight: bold; padding-right: 12px;">
-            <span style="width: 22px; text-align: center;" title="Estudo">E</span>
-            <span style="min-width: 28px; text-align: center;" title="Revisões">R</span>
-            <span style="width: 22px; text-align: center;" title="Questões">Q</span>
-            <span style="width: 22px; text-align: center;" title="Flashcards">F</span>
-            <span style="width: 22px; text-align: center;" title="Dificuldade SRS">D</span>
-          </div>
-
-          <div class="quick-controls" onclick="event.stopPropagation()">
-            <div class="quick-checkbox ${estudoStatus ? 'checked-estudo' : ''}" 
-                 onclick="quickToggleEstudo('${topic.Seq}', this)">${estudoStatus ? '✓' : ''}</div>
             
-            <div class="quick-revisao-counter ${revisaoStatus ? 'has-revisoes' : ''}" 
-                 onclick="openRevisaoPopup(event,'${topic.Seq}', ${revisaoCount})">${revisaoCount}</div>
-            
-            <div class="quick-checkbox ${questoesStatus ? 'checked-questoes' : ''}" 
-                 onclick="quickToggleQuestoes('${topic.Seq}', this)">${questoesStatus ? '✓' : ''}</div>
-            
-            <div class="quick-checkbox ${flashcardsStatus ? 'checked-flashcards' : ''}" 
-                 onclick="quickToggleFlashcards('${topic.Seq}', this)">${flashcardsStatus ? '✓' : ''}</div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+              
+              <div style="display: flex; gap: 12px; margin-right: 5px;">
+                  <div style="display: flex; flex-direction: column; align-items: center;">
+                      <span style="font-size: 0.6rem; color: #aaa; text-transform: uppercase;">Est</span>
+                      <span id="date-est-${topic.Seq}" style="font-size: 0.75rem; color: #fff;">${fmtData(topic['Data Estudo'])}</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; align-items: center;">
+                      <span style="font-size: 0.6rem; color: #aaa; text-transform: uppercase;">Rev</span>
+                      <span id="date-rev-${topic.Seq}" style="font-size: 0.75rem; color: #fff;">${fmtData(topic['Data Revisão'])}</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; align-items: center;">
+                      <span style="font-size: 0.6rem; color: #aaa; text-transform: uppercase;">Prox</span>
+                      <span id="date-prox-${topic.Seq}" style="font-size: 0.75rem; font-weight: bold; color: ${corProxRevisao};">${dataProxRevisao}</span>
+                  </div>
+              </div>
 
-            <div class="quick-difficulty-btn ${diffClass}" 
-                 onclick="quickCycleDifficulty(event, '${topic.Seq}', '${nivelDiff || ''}', this)"
-                 title="Dificuldade: ${nivelDiff || 'Não definida'}">
-                 ${diffIcon}
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <div style="display: flex; gap: 6px; font-size: 0.7rem; color: #FFF; font-weight: bold; padding-right: 12px;">
+                  <span style="width: 22px; text-align: center;" title="Estudo">E</span>
+                  <span style="min-width: 28px; text-align: center;" title="Revisões">R</span>
+                  <span style="width: 22px; text-align: center;" title="Questões">Q</span>
+                  <span style="width: 22px; text-align: center;" title="Flashcards">F</span>
+                  <span style="width: 22px; text-align: center;" title="Dificuldade SRS">D</span>
+                </div>
+
+                <div class="quick-controls" onclick="event.stopPropagation()">
+                  <div class="quick-checkbox ${estudoStatus ? 'checked-estudo' : ''}" 
+                       onclick="quickToggleEstudo('${topic.Seq}', this)">${estudoStatus ? '✓' : ''}</div>
+                  
+                  <div class="quick-revisao-counter ${revisaoStatus ? 'has-revisoes' : ''}" 
+                       onclick="openRevisaoPopup(event,'${topic.Seq}', ${revisaoCount})">${revisaoCount}</div>
+                  
+                  <div class="quick-checkbox ${questoesStatus ? 'checked-questoes' : ''}" 
+                       onclick="quickToggleQuestoes('${topic.Seq}', this)">${questoesStatus ? '✓' : ''}</div>
+                  
+                  <div class="quick-checkbox ${flashcardsStatus ? 'checked-flashcards' : ''}" 
+                       onclick="quickToggleFlashcards('${topic.Seq}', this)">${flashcardsStatus ? '✓' : ''}</div>
+
+                  <div class="quick-difficulty-btn ${diffClass}" 
+                       onclick="quickCycleDifficulty(event, '${topic.Seq}', '${nivelDiff || ''}', this)"
+                       title="Dificuldade: ${nivelDiff || 'Não definida'}">
+                       ${diffIcon}
+                  </div>
+                </div>
+              </div>
+
+              <i class="fas fa-pencil-alt edit-icon" title="Editar tópico"></i>
             </div>
-          </div>
-        </div>
-
-        <i class="fas fa-pencil-alt edit-icon" title="Editar tópico"></i>
-      </div>
-    `;
-    // --- FIM DA ALTERAÇÃO ---
+          `;
           
           listItem.innerHTML = topicContent;
           
-          // Event listener para clique no tópico
+          // Event Listeners
           listItem.addEventListener("click", (e) => {
-            // Não dispara se clicar no ícone de edição
             if (!e.target.classList.contains('edit-icon') && !e.target.closest('.edit-icon')) {
               showTopicDetails(topic.Seq);
             }
           });
           
-          // Event listener para o ícone de edição
           const editIcon = listItem.querySelector('.edit-icon');
           editIcon.addEventListener("click", (e) => {
-            e.stopPropagation(); // Impede que o clique no ícone dispare o showTopicDetails
+            e.stopPropagation(); 
             showTopicDetails(topic.Seq);
             setTimeout(() => {
               if (!isEditMode) {
@@ -3436,8 +3700,15 @@ function formatarHoras(decimalHoras) {
             }, 100);
           });
           
-          listElement.appendChild(listItem);
+          // --- OTIMIZAÇÃO MEIO: Adiciona na caixa invisível em vez da tela ---
+          fragment.appendChild(listItem); 
+          // -------------------------------------------------------------------
         });
+
+        // --- OTIMIZAÇÃO FIM: Joga tudo na tela de uma única vez ---
+        listElement.appendChild(fragment); 
+        // ----------------------------------------------------------
+
         updateTopicCounter();
         showSection("topics-list-container");
       }
@@ -3559,16 +3830,63 @@ function getTopicsForSrsReview(deadline) {
     function filterTopics() {
       const searchTerm = document.getElementById("searchInput").value.toLowerCase();
       const disciplineFilter = document.getElementById("disciplineFilter").value;
+      const statusFilter = document.getElementById("statusFilter").value; // Captura o novo filtro
+
       filteredTopics = allTopics.filter(topic => {
+        // 1. Filtro de Texto
         const matchesSearch = 
           (topic.Tópicos && topic.Tópicos.toLowerCase().includes(searchTerm)) ||
           (topic.Disciplinas && topic.Disciplinas.toLowerCase().includes(searchTerm)) ||
           (topic.Subtópicos && topic.Subtópicos.toLowerCase().includes(searchTerm));
+        
+        // 2. Filtro de Disciplina
         const matchesDiscipline = disciplineFilter === "" || topic.Disciplinas === disciplineFilter;
-        return matchesSearch && matchesDiscipline;
+
+        // 3. Novo Filtro de Status
+        let matchesStatus = true;
+        if (statusFilter === "estudado") {
+            matchesStatus = topic['Status Estudo'] === 'Concluído';
+        } else if (statusFilter === "nao_estudado") {
+            matchesStatus = topic['Status Estudo'] !== 'Concluído';
+        } else if (statusFilter === "revisado") {
+            matchesStatus = (parseInt(topic['Revisao Count']) || 0) > 0;
+        } else if (statusFilter === "nao_revisado") {
+            matchesStatus = (parseInt(topic['Revisao Count']) || 0) === 0;
+        } else if (statusFilter === "questoes") {
+            matchesStatus = topic['Status Questões'] === 'Concluído';
+        } else if (statusFilter === "nao_questoes") {
+            matchesStatus = topic['Status Questões'] !== 'Concluído';
+        } else if (statusFilter === "flashcards") {
+            matchesStatus = topic['Status Flashcards'] === 'Concluído';
+        } else if (statusFilter === "nao_flashcards") {
+            matchesStatus = topic['Status Flashcards'] !== 'Concluído';
+        }
+
+        return matchesSearch && matchesDiscipline && matchesStatus;
       });
       displayTopicsList();
     }
+    // --- FUNÇÃO DE BUSCA (MODAL) ---
+    function toggleSearch() {
+      const wrapper = document.getElementById('expandableSearch');
+      const input = document.getElementById('searchInput');
+      
+      // Alterna a classe 'active' (CSS faz o resto)
+      wrapper.classList.toggle('active');
+      
+      // Se abriu, foca no campo
+      if (wrapper.classList.contains('active')) {
+        setTimeout(() => input.focus(), 100); // Pequeno delay para garantir renderização
+      }
+    }
+    
+    // Fecha o modal se clicar fora (Opcional, mas recomendado para UX)
+    document.addEventListener('click', function(event) {
+      const wrapper = document.getElementById('expandableSearch');
+      if (wrapper && wrapper.classList.contains('active') && !wrapper.contains(event.target)) {
+        wrapper.classList.remove('active');
+      }
+    });
 	function updateCheckboxStatus(type) {
   const checkbox = document.getElementById(`${type}-checkbox`);
   const dateInput = document.getElementById(`${type}-date`);
@@ -5975,35 +6293,65 @@ async function saveRevisaoPopup(sequence) {
     // --- FUNÇÕES DA AGENDA (FASE 2 COMPLETA) ---
 
     // Função com loading para o botão Agenda
+    // Função com loading INTELIGENTE para o botão Agenda
     async function showAgendaWithLoading() {
-      const button = document.querySelector('.top-bar button:nth-child(7)'); 
-      const mainIcon = button.querySelector('.fa-calendar-alt');
-      const spinner = button.querySelector('.button-spinner');
+    // --- NOVO: VERIFICAÇÃO DE PERFORMANCE ---
+    // Se a agenda já foi carregada em background, abre imediatamente sem loading
+    if (window.agendaDataLoaded) {
+        showAgendaModal();
+        return; 
+    }
+    // ----------------------------------------
 
-      button.disabled = true; 
-      if(mainIcon) mainIcon.style.display = 'none';
-      if(spinner) spinner.style.display = 'inline-block';
-
-      try {
-        // --- MODIFICAÇÃO: CACHE DE AGENDA ---
-        // Verifica se já carregamos os dados nesta sessão para não buscar de novo
+    const button = document.querySelector('.top-bar button:nth-child(7)');
+    const mainIcon = button.querySelector('.fa-calendar-alt');
+    const spinner = button.querySelector('.button-spinner');
+    
+    // 1. Ativa visual no botão
+    button.classList.add('loading');
+    if(mainIcon) mainIcon.style.display = 'none';
+    if(spinner) spinner.style.display = 'inline-block';
+    
+    // 2. Adiciona overlay de carregamento na tela toda
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'agenda-loading-overlay';
+    loadingOverlay.innerHTML = `
+        <div class="loading-content">
+            <div class="spinner-large"></div>
+            <p>Carregando sua agenda de estudos...</p>
+            <p class="loading-subtext">Isso pode levar alguns segundos</p>
+        </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+    
+    try {
+        // Força um tempo mínimo de exibição do loading (300ms) apenas se precisar carregar
+        const loadingPromise = new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Verifica novamente (redundância de segurança) ou carrega se necessário
         if (!window.agendaDataLoaded) {
-            await loadAgendaData();
-            window.agendaDataLoaded = true; // Marca como carregado
+            await Promise.all([loadAgendaData(), loadingPromise]);
+            window.agendaDataLoaded = true;
+        } else {
+            await loadingPromise;
         }
-        // ------------------------------------
         
         showAgendaModal();
-      } catch (error) {
+    } catch (error) {
         console.error("Erro ao mostrar agenda:", error);
         showNotification('Não foi possível carregar a agenda.', 'error');
-      } finally {
+    } finally {
+        // Remove o overlay de loading
+        const overlay = document.getElementById('agenda-loading-overlay');
+        if (overlay) overlay.remove();
+        
+        // Restaura o botão
+        button.classList.remove('loading');
         button.disabled = false;
         if(mainIcon) mainIcon.style.display = 'inline-block';
         if(spinner) spinner.style.display = 'none';
-      }
     }
-
+}
    // Fechar modal da agenda
     function closeAgendaModal() {
 	 if (isTimerRunning) startPauseTimer(); // Pausa o timer se estiver rodando
