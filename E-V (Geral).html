@@ -7493,7 +7493,7 @@
       const config = JSON.parse(localStorage.getItem('agendaConfig') || '{}');
       const mostrarManha = config.periodos?.includes('manha') ?? true;
       const mostrarTarde = config.periodos?.includes('tarde') ?? true;
-      const mostrarNoite = config.periodos?.includes('noite') ?? false;
+      const mostrarNoite = config.periodos?.includes('noite') ?? true;
 
       document.getElementById('periodo-manha').checked = mostrarManha;
       document.getElementById('periodo-tarde').checked = mostrarTarde;
