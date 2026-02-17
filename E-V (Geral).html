@@ -355,12 +355,15 @@
     }
 
     #main-container {
-      display: flex;
-      flex-direction: column;
-      /* Muda de altura fixa (650px) para cálculo dinâmico: 100% da tela menos cabeçalho */
-      height: calc(100vh - 120px);
-      gap: 12px;
-    }
+        display: flex;
+        flex-direction: column;
+        /* Define a altura do container pai para ir até o fim da tela */
+        height: calc(100vh - 70px) !important; 
+        min-height: unset !important; /* Remove travas antigas */
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+        gap: 0 !important; /* Remove espaços extras entre elementos */
+      }
 
     .content-area {
       display: flex;
@@ -368,19 +371,20 @@
       height: 100%;
     }
 
-    #topics-list-container {
-      flex: 1 1 auto;
-      /* <-- Adicionado '1 1 auto' para garantir o crescimento */
-      border: 1px solid #333;
-      border-radius: 6px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-width: 200px;
-      background: #000000;
-      /* max-height: 500px; <-- Comentado/removido para permitir crescimento livre */
-      overflow-y: auto;
-    }
+   #topics-list-container {
+        min-width: unset;
+        max-width: unset;
+        
+        /* OGRANDE TRUQUE: flex: 1 faz ele ocupar TODO o espaço que sobrar */
+        flex: 1 !important; 
+        height: auto !important; /* Deixa o flex controlar a altura */
+        
+        /* Remove bordas inferiores para encostar no fundo */
+        margin-bottom: 0 !important;
+        border-bottom: none !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+      }
 
     .list-header {
       background: linear-gradient(to right, #222, #111);
@@ -401,17 +405,17 @@
       background: #000000;
     }
 
-    /* 4. Ícone de edição sempre visível */
     .topic-item {
       padding: 10px 12px;
-      border-bottom: 1px solid #333;
-      cursor: pointer;
+      border-bottom: 1px solid rgba(210, 172, 71, 0.3) !important;
+      cursor: default; /* MUDANÇA: 'pointer' para 'default' (seta normal) */
       transition: all 0.2s ease;
       color: #eee;
       font-size: 0.85rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
+	  margin-bottom: 2px;
     }
 
     .topic-item:hover {
@@ -1158,9 +1162,11 @@
       background: rgba(0, 0, 0, 0.5);
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start; /* ALTERADO: Alinha ao topo em vez do centro */
+      padding-top: 50px;       /* ADICIONADO: Espaço para não colar no teto */
       z-index: 999;
       display: none;
+      overflow-y: auto;        /* ADICIONADO: Garante rolagem se a tela for pequena */
     }
 
     .modal-backdrop#confirmModal {
@@ -1896,8 +1902,15 @@
 
     /* Responsividade */
     @media (max-width: 768px) {
+	/* --- NOVO: Força o botão X a aparecer no celular --- */
+      #btnXFecharMobile {
+        display: flex !important;
+      }
+	  /* --- PASSO 1: Esconde o ícone de usuário do cabeçalho no celular --- */
+  .header-user-icon {
+    display: none !important;
+  }
       /* === HARMONIA DE FONTES MOBILE === */
-
       /* 1. Reduz o Título Principal (estava muito grande) */
       header h1 {
         font-size: 1.3rem !important;
@@ -1953,43 +1966,185 @@
       }
 
       /* === NOVO MENU HAMBÚRGUER E TOQUE === */
+
+      /* Linha superior sempre visível no mobile: hambúrguer + busca + filtro */
+      .mobile-top-row {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        margin-bottom: 8px;
+      }
+/* CORREÇÃO: Força a caixa de busca a abrir para a direita no celular */
+      #expandableSearchMobile .search-input-modal {
+        right: auto !important; 
+        left: -5px !important;  
+        top: 45px !important;   
+        
+        /* AJUSTE FINO AQUI: */
+        width: 220px !important;    /* Reduzido de 250px para 220px */
+        max-width: 75vw !important; /* SEGURANÇA: Nunca ocupará mais que 75% da tela do celular */
+      }
       .mobile-menu-btn {
         display: flex !important;
-        /* Mostra o botão apenas no mobile */
+        background: transparent !important;
+        border: 2px solid #D2AC47 !important;
+        color: #D2AC47 !important;
+        font-size: 1.4rem !important;
+        padding: 6px 10px !important;
+        border-radius: 6px !important;
+        cursor: pointer !important;
+        align-items: center !important;
+        justify-content: center !important;
+		width: 34px !important;       /* Largura fixa igual à altura */
+        max-width: 34px !important;   /* Trava a largura máxima */
+        min-height: 30px !important;
+        height: 30px !important;
+        flex-shrink: 0;
       }
 
-      .top-bar {
-        display: none;
-        /* Esconde a barra normal por padrão */
-        flex-direction: column;
-        background: #111;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        width: 100%;
-        padding: 15px;
-        z-index: 1000;
-        border-bottom: 2px solid #D2AC47;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-      }
-
-      .top-bar.active {
-        display: flex;
-        /* Mostra quando ativo */
-        max-height: 80vh;
-        /* Limita altura */
-        overflow-y: auto;
-        /* Permite rolar se tiver muitos botões */
-      }
-
-      .top-bar button,
-      .search-container {
+      /* O menu hambúrguer: escondido por padrão, abre como dropdown */
+      #mainTopBar {
+        display: none !important;
+        flex-direction: column !important;
+        
+        /* CORREÇÃO AQUI: Alinha tudo no TOPO */
+        justify-content: flex-start !important; 
+        
+        background: #0d0d0d !important; 
+        position: fixed !important; 
+        top: 0 !important; 
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important; 
         width: 100% !important;
-        /* Botões ocupam largura total */
+        height: 100vh !important;
+        padding: 20px !important;
+        z-index: 9999 !important; 
+        overflow-y: auto !important;
+        gap: 10px !important; /* Espaço pequeno fixo entre o X e os botões */
+      }
+
+      /* Estilo do novo botão de fechar menu */
+      .mobile-close-menu-btn {
+        display: flex !important;
+        width: 100% !important;
+        background: #7A0000 !important;
+        color: white !important;
+        border: 1px solid #ff4d4d !important;
+        padding: 12px !important;
+        border-radius: 8px !important;
+        margin-bottom: 20px !important;
+        font-weight: bold !important;
+        justify-content: center !important;
+        align-items: center !important;
+        cursor: pointer !important;
+        font-size: 1rem !important;
+        min-height: 45px !important;
+      }
+      
+      .mobile-close-menu-btn i {
+        margin-right: 8px;
+      }
+
+      /* --- CORREÇÃO DE FONTES E MODAIS (Imagens 1 e 2) --- */
+      
+      /* Ajusta Modal para não cortar laterais */
+      .modal {
+        width: 95% !important;
+        padding: 15px 10px !important; /* Menos padding lateral */
+        max-height: 90vh !important;
+      }
+
+      /* Título do Modal menor para não bater no botão X */
+      .modal h3, #overview-title, #dados-title {
+        font-size: 1.1rem !important;
+        margin-top: 10px !important; /* Espaço para o botão X */
+        padding-right: 30px !important; /* Espaço lateral para o X não cobrir texto */
+        line-height: 1.4 !important;
+      }
+
+      /* Reposiciona o botão X dos Modais */
+      .btn-fechar-novo {
+        top: 5px !important;
+        right: 5px !important;
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1rem !important;
+      }
+
+      /* Reduz tamanho das letras nos dados (Visão Geral) */
+      .overview-text-summary div, 
+      .bigger-font {
+        font-size: 0.95rem !important; /* Reduz fonte */
+        line-height: 1.3 !important;
+      }
+      
+      /* Garante que valores numéricos grandes quebrem linha se necessário */
+      .overview-text-summary div {
+        word-break: break-word !important;
+      }
+
+      /* Ajuste do Select de Disciplinas no Mobile */
+      #disciplineFilter, #disciplineFilterMobile {
+        max-width: 100% !important;
+        width: 100% !important;
+        font-size: 1rem !important; /* Fonte legível */
+        height: 45px !important; /* Área de toque maior */
+      }
+
+      #mainTopBar.active {
+        display: flex !important;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      /* Esconde os right-controls no mobile (busca e filtro já estão na mobile-top-row) */
+      #mainTopBar .right-controls {
+        display: none !important;
+      }
+
+      /* Select de disciplina dentro do menu: largura total */
+      #mainTopBar #disciplineFilter {
+        width: 100% !important;
         max-width: none !important;
-        margin-bottom: 10px;
-        justify-content: flex-start;
-        /* Alinha texto à esquerda */
+        height: 40px !important;
+        max-height: none !important;
+        min-height: 40px !important;
+        font-size: 0.95rem !important;
+        padding: 8px 16px !important;
+        border-radius: 8px !important;
+        border: 1px solid #555 !important;
+        background: #222 !important;
+        color: #fff !important;
+        margin-bottom: 6px;
+      }
+      /* Botões dentro do menu: largura total, layout vertical ajustado */
+      #mainTopBar .left-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 5px !important;        /* MUDANÇA: Reduzido de 8px para 5px (mais compactos) */
+        overflow-x: visible !important;
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+      }
+
+      #mainTopBar .left-buttons button {
+        width: 100% !important;
+        max-width: none !important;
+        
+        /* MUDANÇA: Altura reduzida para economizar tela */
+        height: 30px !important;      
+        min-height: 30px !important;
+        max-height: none !important;
+        
+        /* MUDANÇA: Padding vertical removido para centralizar no espaço menor */
+        padding: 0 16px !important;   
+        
+        font-size: 0.95rem !important; /* Fonte mantida */
+        justify-content: flex-start !important;
+        border-radius: 6px !important; /* Leve ajuste na borda para a nova altura */
       }
 
       /* Estilo do Bloco Selecionado (Toque para Mover) */
@@ -2118,13 +2273,27 @@
         padding: 10px;
       }
 
+      /* AJUSTE DE ALTURA DA LISTA (Ocupar até a base) */
       #topics-list-container {
         min-width: unset;
         max-width: unset;
-        /* Ocupa a altura total (100vh) MENOS o espaço do cabeçalho e botões (~240px) */
-        height: calc(100vh - 240px) !important;
+        /* ALTERADO: De 240px para 160px. Isso "estica" a lista para baixo */
+        height: calc(100vh - 160px) !important;
         min-height: 400px !important;
-        /* Garante tamanho mínimo */
+        margin-bottom: 0 !important;
+        /* Remove bordas inferiores arredondadas para dar sensação de continuidade */
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        border-bottom: none !important;
+      }
+
+      /* NOVO: Remove espaços mortos no fundo dos containers principais */
+      .container, .app-container, .progress-app, #main-container {
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+        border-bottom: none !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
       }
 
       .user-info {
@@ -2917,25 +3086,35 @@
 
     /* --- BARRA SUPERIOR: ALINHAMENTO CENTRAL PERFEITO --- */
     .top-bar {
-      display: flex !important;
-      align-items: center !important;
+      display: flex;
+      align-items: center;
       /* Centro matemático vertical */
-      justify-content: space-between !important;
-      flex-wrap: nowrap !important;
-      overflow: visible !important;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      overflow: visible;
 
       /* CONTAINER: A altura será definida pelo conteúdo + padding */
-      height: auto !important;
-      padding: 5px 6px !important;
+      height: auto;
+      padding: 5px 6px;
       /* 5px em cima e 5px em baixo exatos */
 
       gap: 8px;
       position: relative;
       z-index: 500;
-      border-bottom: none !important;
-      margin-bottom: 0 !important;
+      border-bottom: none;
+      margin-bottom: 0;
       background: transparent;
       /* Garante que não haja cor de fundo estranha */
+    }
+
+    /* --- MOBILE TOP ROW: escondido no desktop --- */
+    .mobile-top-row {
+      display: none;
+    }
+
+    /* --- MOBILE MENU BTN: escondido no desktop --- */
+    .mobile-menu-btn {
+      display: none;
     }
 
     /* Grupo da Esquerda */
@@ -3104,6 +3283,465 @@
     }
 
     /* --- FIM DO ESTILO DO OVERLAY --- */
+    /* --- PORTED LOGIN STYLES FROM V57 --- */
+    :root {
+      /* VARIÁVEIS DO LOGIN (CHICO CONCURSOS) */
+      --gold-main: #FFD700;
+      --gold-gradient: linear-gradient(135deg, #D2AC47 0%, #F7EF8A 50%, #AE8625 100%);
+      --bg-body-login: #050505;
+      --bg-card-login: #121212;
+    }
+
+    #loginModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-body-login);
+      z-index: 100000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      /* Default for mobile/safe */
+      padding-top: 20px;
+      padding-left: 20px;
+      padding-right: 20px;
+      padding-bottom: 40px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    @media (min-height: 600px) {
+      #loginModal {
+        justify-content: flex-start; /* MUDANÇA: Alinha ao topo, não ao centro */
+        padding-top: 50px;           /* MUDANÇA: Espaço para não colar no teto */
+      }
+    }
+
+    .login-container-clean {
+      background-color: var(--bg-card-login);
+      padding: 40px 30px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
+      text-align: center;
+      border: 1px solid #333;
+      position: relative;
+    }
+
+    .login-container-clean::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gold-gradient);
+      border-radius: 20px 20px 0 0;
+    }
+
+    .login-logo-clean {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 900;
+      font-size: 1.8em;
+      color: white;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+
+    .login-logo-clean span {
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: var(--gold-main);
+    }
+
+    .login-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #666;
+      margin-bottom: 30px;
+      border: 1px solid #333;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 15px;
+      top: 22px;
+      /* Fixed px instead of % to avoid line-height issues */
+      transform: translateY(-50%);
+      color: #D2AC47;
+      font-size: 1rem;
+      /* Slightly larger */
+      pointer-events: none;
+      z-index: 10;
+      line-height: 1;
+      /* Reset line-height */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 20px;
+      width: 20px;
+    }
+
+    .login-container-clean input {
+      width: 100%;
+      height: 45px;
+      padding: 0 15px 0 50px !important;
+      background-color: #111 !important;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: white !important;
+      font-size: 0.9rem;
+      outline: none;
+      transition: 0.3s;
+      box-sizing: border-box;
+    }
+
+    .login-container-clean input:focus {
+      border-color: #D2AC47;
+      box-shadow: 0 0 10px rgba(210, 172, 71, 0.1);
+      background-color: #000 !important;
+    }
+
+    .login-container-clean input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 30px #111 inset !important;
+      -webkit-text-fill-color: white !important;
+    }
+
+    .login-button-clean {
+      width: 100%;
+      height: 45px;
+      margin-top: 15px;
+      background: linear-gradient(135deg, #D2AC47, #F7EF8A, #AE8625);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 15px rgba(210, 172, 71, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .login-button-clean:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(210, 172, 71, 0.4);
+    }
+
+    .login-button-clean:disabled {
+      width: 45px !important;
+      height: 45px !important;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 50% !important;
+      padding: 0 !important;
+      background: transparent !important;
+      border: 2px solid rgba(210, 172, 71, 0.3) !important;
+      transform: none !important;
+      animation: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: wait;
+      box-shadow: none !important;
+      color: transparent;
+    }
+
+    .login-button-clean:disabled span {
+      display: none !important;
+    }
+
+    .login-button-clean:disabled .spinner {
+      display: block !important;
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto !important;
+      width: 24px !important;
+      height: 24px !important;
+      border: 3px solid transparent !important;
+      border-top-color: #D2AC47 !important;
+      border-radius: 50% !important;
+      animation: spinForce 0.8s linear infinite !important;
+    }
+
+    @keyframes spinForce {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+	/* --- CORREÇÃO DE LAYOUT DOS TÓPICOS (MOBILE) --- */
+    
+    /* Container da direita (Metrics, Datas, Checkboxes) */
+    .topic-right-panel {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    /* Container dos Checkboxes */
+    .topic-checkbox-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* Ajustes Específicos para Mobile (Telas pequenas) */
+    @media (max-width: 768px) {
+      .topic-right-panel {
+        display: flex;
+        flex-wrap: wrap; /* Permite que os itens pulem para a próxima linha */
+        width: 100%;
+        justify-content: space-between; /* Espalha os itens */
+        gap: 10px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #222; /* Separação sutil do título */
+      }
+
+      /* Grupo de Métricas (Páginas/Cards) */
+      .topic-metrics {
+        order: 1; /* Fica em primeiro na linha de cima */
+      }
+
+      /* Grupo de Datas */
+      .topic-dates-wrapper {
+        order: 2; /* Fica em segundo na linha de cima */
+      }
+      
+      /* Ícone de Edição */
+      .edit-icon {
+        order: 2; /* Fica junto com as datas na direita */
+      }
+
+      /* O GRANDE TRUQUE: Grupo de Checkboxes vai para uma linha nova inteira */
+      .topic-checkbox-group {
+        order: 3; /* Vai para baixo */
+        width: 100%; /* Ocupa a linha toda */
+        background: rgba(255, 255, 255, 0.03); /* Fundo leve para destacar */
+        border-radius: 6px;
+        padding: 8px 0;
+        margin-top: 5px;
+        flex-direction: column; /* Mantém cabeçalhos acima dos boxes */
+      }
+      
+      /* Garante que os checkboxes fiquem centralizados nessa nova linha */
+      .topic-checkbox-group > div {
+        justify-content: center !important;
+        width: 100%;
+      }
+      
+      /* Ajuste nas margens dos cabeçalhos E R Q F D no mobile */
+      .topic-checkbox-group > div:first-child {
+        margin-bottom: 4px !important;
+      }
+    }
+	/* ============================================================ */
+    /* === MODO IMERSIVO (TELA CHEIA) PARA CELULAR - V124 === */
+    /* ============================================================ */
+    @media (max-width: 768px) {
+      
+      /* 1. Corpo da página: Remove margens e fixa fundo */
+      body {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #000 !important; /* Fundo preto contínuo */
+      }
+
+      /* 2. Container Principal (A caixa de fora): Remove bordas e padding */
+      .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important; /* Remove linha de borda */
+        border-radius: 0 !important; /* Remove cantos arredondados */
+        box-shadow: none !important; /* Remove sombra 3D */
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* 3. Área do App (A caixa do meio): Funde com o fundo */
+      .progress-app {
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important; /* Conteúdo cola nas bordas para ganhar espaço */
+        box-shadow: none !important;
+        background: transparent !important;
+        min-height: 100vh !important;
+      }
+
+      /* 4. Container da Lista (A caixa de dentro): Remove bordas laterais */
+      #topics-list-container {
+        border-left: none !important;
+        border-right: none !important;
+        border-radius: 0 !important;
+        background: #000 !important;
+      }
+
+      /* 5. Ajuste do Cabeçalho para não ficar colado demais no topo da tela */
+      header {
+        padding-top: 10px !important;
+        padding-bottom: 5px !important;
+        background: #0d0d09 !important; /* Fundo sutil para destacar título */
+        border-bottom: 1px solid #222;
+      }
+
+      /* 6. Garante que a barra de ferramentas (botões) tenha um respiro mínimo */
+      .mobile-top-row {
+        padding: 8px 10px !important; /* Espacinho nas laterais para não cortar botões */
+      }
+      
+      /* 7. Ajuste final de altura para usar 100% da tela */
+      #main-container {
+        height: calc(100vh - 120px) !important; 
+        padding: 0 !important;
+      }
+    }
+	/* --- CORREÇÃO DOS GRÁFICOS DE PIZZA (RESPONSIVIDADE) --- */
+    .pizza-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 10px;
+    }
+
+    /* No celular, muda a direção para COLUNA (um embaixo do outro) */
+    @media (max-width: 768px) {
+      .pizza-container {
+        flex-direction: column !important; 
+        gap: 25px !important;
+      }
+      
+      /* Ajuste fino para centralizar o conteúdo das pizzas no mobile */
+      .pizza-container > div {
+        justify-content: center !important; /* Centraliza horizontalmente */
+      }
+    }
+	/* =======================================================
+       CORREÇÃO BLINDADA: DESKTOP (COMPUTADOR > 768px)
+       ======================================================= */
+    @media (min-width: 769px) {
+
+      /* 1. Ocultar Elementos de Celular */
+      #btnXFecharMobile,
+      .mobile-menu-toggle,
+      .close-sidebar-btn,
+      .mobile-close-menu-btn,
+      #mobile-menu-overlay,
+      .mobile-top-row,
+      .mobile-menu-btn,
+      #btnSairMobile,
+      .mobile-only-btn {
+        display: none !important;
+      }
+
+      /* 2. Layout Geral: Habilita Rolagem e Flexbox */
+      html, body {
+        height: auto !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        position: static !important;
+      }
+
+      /* Container Principal Lado a Lado */
+      .container {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+        max-width: 1200px !important; /* Limita largura no PC para não esticar demais */
+        margin: 0 auto; /* Centraliza na tela */
+        height: auto !important;
+        min-height: 100vh !important;
+        padding-bottom: 40px !important;
+      }
+
+      /* 3. Coluna da Esquerda (Menu/Sidebar) - SE HOUVER */
+      /* Mantemos o código caso você use sidebar no futuro, mas oculto se não usar */
+      .sidebar {
+        display: none !important; /* Oculto pois seu design atual é top-bar */
+      }
+
+      /* 4. Área de Conteúdo (Ocupa tudo) */
+      .main-content, 
+      .app-container,
+      #main-container {
+        flex: 1 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+      }
+
+      .content-area {
+        height: auto !important;
+        display: flex !important;
+        gap: 20px; /* Espaço entre a lista e o detalhe */
+      }
+
+      /* 5. Lista de Tópicos */
+      #topics-list-container {
+        flex: 1 !important;
+        height: auto !important;
+        max-height: 80vh !important; /* Limita altura para ter rolagem interna se quiser */
+        overflow-y: auto !important;
+      }
+
+      /* 6. CORREÇÃO ESPECÍFICA DO ALINHAMENTO DOS CHECKBOXES */
+      .topic-right-panel {
+         display: flex !important;
+         align-items: center !important;
+         gap: 15px !important;
+         flex-wrap: nowrap !important;
+      }
+
+      .topic-checkbox-group {
+        display: flex !important;
+        flex-direction: column !important; /* Letras em cima, Caixas embaixo */
+        align-items: center !important;    /* Centraliza o bloco */
+        justify-content: center !important;
+        gap: 0px !important;               /* Remove vão vertical extra */
+        width: auto !important;
+        border: none !important;
+        background: transparent !important;
+        margin-top: 0 !important;
+      }
+
+      /* Garante que o container das letras e das caixas tenham o mesmo comportamento */
+      .topic-checkbox-group > div {
+         justify-content: center !important;
+      }
+      
+      .quick-controls {
+        gap: 8px !important; /* Garante que o CSS respeite o gap de 8px */
+      }
+    }
   </style>
 </head>
 
@@ -3124,65 +3762,105 @@
       </header>
       <div class="progress-app">
         <!-- CONTAINER DE LOGIN -->
-        <div id="login-container" style="display: flex;">
-          <form id="login-form">
-            <h2 style="color: #D2AC47; margin-bottom: 12px; font-size: 1.2rem;"><i class="fas fa-lock"></i> Acesso
-              Seguro</h2>
-            <p style="margin-bottom: 12px; font-size: 0.85rem;">Digite suas credenciais de aluno:</p>
-
-            <div style="text-align: left; margin-bottom: 5px;">
-              <label style="font-size: 0.8rem; color: #ccc; margin-left: 2px;">E-mail</label>
-              <input type="email" id="user-email" placeholder="seu@email.com" required style="margin-bottom: 10px;">
+        <!-- CONTAINER DE LOGIN (PORTED FROM V57) -->
+        <div id="loginModal">
+          <div class="login-container-clean">
+            <div class="login-logo-clean">
+              CHICO <span>CONCURSOS</span>
             </div>
 
-            <div style="text-align: left; margin-bottom: 5px;">
-              <label style="font-size: 0.8rem; color: #ccc; margin-left: 2px;">Senha</label>
-              <input type="password" id="user-password" placeholder="Sua senha" required>
-            </div>
+            <div class="login-badge">ACESSO RESTRITO</div>
 
-            <button type="submit" style="margin-top: 10px;">
-              <i class="fas fa-sign-in-alt"></i> Entrar
-              <i class="fas fa-spinner button-spinner" style="display: none;"></i>
-            </button>
-            <div class="login-spinner" id="login-spinner"></div>
-            <div id="login-error" style="display: none; margin-top: 10px; color: #D2AC47;"></div>
-          </form>
+            <form id="login-form">
+
+              <div class="input-wrapper">
+                <i class="fas fa-envelope input-icon"></i>
+                <input type="email" id="user-email" required placeholder="Digite seu e-mail" autocomplete="off">
+              </div>
+
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input type="password" id="user-password" required placeholder="Sua senha de acesso">
+              </div>
+
+              <button type="submit" class="login-button-clean" id="loginSubmitBtn">
+                <span id="loginBtnText">ENTRAR</span>
+                <div class="spinner" id="loginSpinner"></div>
+              </button>
+            </form>
+
+            <div id="login-error" style="display: none; margin-top: 15px; color: #D2AC47;"></div>
+          </div>
         </div>
         <!-- CONTEÚDO PRINCIPAL (APÓS LOGIN) -->
         <div id="app-content" style="display: none;">
-          <button class="mobile-menu-btn" onclick="toggleMobileMenu()"
-            style="display: none; background: transparent; border: 2px solid #D2AC47; color: #D2AC47; font-size: 1.4rem; padding: 6px 10px; border-radius: 6px; margin-bottom: 10px; cursor: pointer; align-items: center; justify-content: center;">
-            <i class="fas fa-bars"></i>
-          </button>
 
-          <div class="top-bar" id="mainTopBar">
+          <!-- MOBILE: Linha superior sempre visível (hambúrguer + busca + filtro) -->
+          <div class="mobile-top-row">
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+              <i class="fas fa-bars"></i>
+            </button>
 
-            <div class="left-buttons">
-              <button onclick="showProgressOverviewWithLoading()"><i class="fas fa-chart-bar"></i> Visão Geral</button>
-              <button onclick="showIndividualProgressOverviewWithLoading()"><i class="fas fa-chart-bar"></i> Minha
-                Visão</button>
-              <button onclick="openUserGoalsModal()"><i class="fas fa-bullseye"></i> Metas</button>
-              <button onclick="showRaioXOverviewWithLoading()"><i class="fas fa-binoculars"></i> Raio X</button>
-              <button onclick="showDadosOverviewWithLoading()"><i class="fas fa-database"></i> Dados</button>
-              <button onclick="showEstatisticasMetasWithLoading()"><i class="fas fa-chart-line"></i>
-                Estatísticas</button>
-              <button onclick="showAgendaWithLoading()"><i class="fas fa-calendar-alt"></i> Agenda</button>
+            <div class="search-wrapper" id="expandableSearchMobile">
+              <button class="search-btn" onclick="toggleSearchMobile()" title="Pesquisar">
+                <i class="fas fa-search"></i>
+              </button>
+              <div class="search-input-modal">
+                <input type="text" id="searchInputMobile" placeholder="Digite para buscar..."
+                  oninput="syncSearchInput(this); filterTopics()">
+              </div>
             </div>
 
-            <div class="right-controls">
-
-              <select id="disciplineFilter" onchange="filterTopics()"
-                style="max-width: 140px; height: 32px; padding: 0 8px;">
-                <option value="">Todas as Disciplinas</option>
+            <div class="filter-icon-wrapper" title="Filtrar por Status" style="width: 32px; height: 32px;"> <i
+                class="fas fa-filter"></i>
+              <select id="statusFilterMobile" onchange="syncStatusFilter(this); filterTopics()">
+                <option value="" selected disabled hidden>Filtrar</option>
+                <option value="">🔄 Ver Todos</option>
+                <option value="estudado">✅ Estudados</option>
+                <option value="nao_estudado">⬜ Não Estudados</option>
+                <option value="revisado">🔄 Revisados</option>
+                <option value="nao_revisado">⬜ Não Revisados</option>
+                <option value="questoes">❓ Questões Feitas</option>
+                <option value="nao_questoes">⬜ Questões Pendentes</option>
+                <option value="flashcards">⚡ Flashcards Feitos</option>
+                <option value="nao_flashcards">⬜ Flashcards Pendentes</option>
               </select>
+            </div>
+          </div>
 
-              <div class="search-wrapper" id="expandableSearch">
-                <button class="search-btn" onclick="toggleSearch()" title="Pesquisar">
-                  <i class="fas fa-search"></i>
-                </button>
+          <!-- MENU HAMBÚRGUER (abre/fecha via botão ☰) -->
+         <div class="top-bar" id="mainTopBar">
+    
+    <button id="btnXFecharMobile" class="mobile-close-menu-btn" onclick="toggleMobileMenu()" style="margin-bottom: 0;">
+    FECHAR MENU
+</button>
 
-                <div class="search-input-modal">
-                  <input type="text" id="searchInput" placeholder="Digite para buscar..." oninput="filterTopics()">
+    <div class="left-buttons">
+      <button onclick="showProgressOverviewWithLoading()"><i class="fas fa-chart-bar"></i> Visão Geral</button>
+      <button onclick="showIndividualProgressOverviewWithLoading()"><i class="fas fa-chart-bar"></i> Minha Visão</button>
+      <button onclick="openUserGoalsModal()"><i class="fas fa-bullseye"></i> Metas</button>
+      <button onclick="showRaioXOverviewWithLoading()"><i class="fas fa-binoculars"></i> Raio X</button>
+      <button onclick="showDadosOverviewWithLoading()"><i class="fas fa-database"></i> Dados</button>
+      <button onclick="showEstatisticasMetasWithLoading()"><i class="fas fa-chart-line"></i> Estatísticas</button>
+      <button onclick="showAgendaWithLoading()"><i class="fas fa-calendar-alt"></i> Agenda</button>
+	  <button id="btnSairMobile" onclick="logout()" class="mobile-only-btn" style="background: linear-gradient(135deg, #7A0000, #A10000); color: white; border: 1px solid #ff4d4d; margin-top: 10px;">
+    <i class="fas fa-sign-out-alt"></i> Sair
+</button>
+    </div>
+
+    <div class="right-controls">
+      
+      <select id="disciplineFilter" onchange="filterTopics()" 
+              style="max-width: 140px; height: 32px; padding: 0 8px; margin-right: 10px;">
+        <option value="">Todas as Disciplinas</option>
+      </select>
+
+      <div class="search-wrapper" id="expandableSearch">
+        <button class="search-btn" onclick="toggleSearch()" title="Pesquisar">
+          <i class="fas fa-search"></i>
+        </button>
+        <div class="search-input-modal">
+          <input type="text" id="searchInput" placeholder="Digite para buscar..." oninput="filterTopics()">
                 </div>
               </div>
 
@@ -3610,7 +4288,7 @@
 
   <script>
     // --- CONFIGURAÇÃO ---
-    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztk-YXXLhBnRyQZsNqaEhmwhPBot4cbpj5Bx-vgjPs4MaWvZAovfxV-uvhAIcAg8F4/exec";
+    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxbrBY73qz1bGkxPSISORr2kIRFJUrpRDTBhZnH8G51JsPxjIDRDFnKXwd7vSmfF64tZA/exec";
 
     // --- LÓGICA HÍBRIDA DE ID (URL ou LOCALSTORAGE) ---
     const urlParamsId = new URLSearchParams(window.location.search);
@@ -3807,7 +4485,7 @@
         const headerDisplay = document.getElementById('header-user-email');
         if (headerDisplay) headerDisplay.textContent = savedUser;
 
-        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('loginModal').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
 
         // Garante que o ID da planilha esteja carregado
@@ -3824,9 +4502,7 @@
       const emailInput = document.getElementById('user-email');
       const passInput = document.getElementById('user-password');
       const errorElement = document.getElementById('login-error');
-      const submitButton = document.querySelector('#login-form button[type="submit"]');
-      const buttonSpinner = submitButton.querySelector('.button-spinner');
-      const buttonIcon = submitButton.querySelector('.fa-sign-in-alt');
+      const submitButton = document.getElementById('loginSubmitBtn');
 
       if (emailInput && passInput) {
         const email = emailInput.value.trim();
@@ -3838,9 +4514,8 @@
           return;
         }
 
-        setButtonLoading(submitButton, true);
-        buttonIcon.style.display = 'none';
-        buttonSpinner.style.display = 'inline-block';
+        // --- NOVA LÓGICA DE LOADING (CSS :disabled) ---
+        submitButton.disabled = true;
         errorElement.style.display = 'none';
 
         try {
@@ -3877,9 +4552,9 @@
           // 1. Salva dados críticos
           currentUserName = realUserName;
           localStorage.setItem('currentUserName', realUserName);
-          localStorage.setItem('savedUserEmail', realUserName);      // <--- ADICIONE
-          localStorage.setItem('savedSheetId', userSpreadsheetId);   // <--- ADICIONE
-          localStorage.setItem('savedCourseName', userCourseName);   // <--- ADICIONE
+          localStorage.setItem('savedUserEmail', realUserName);
+          localStorage.setItem('savedSheetId', userSpreadsheetId);
+          localStorage.setItem('savedCourseName', userCourseName);
           localStorage.setItem('userSpreadsheetId', userSpreadsheetId);
 
           // 2. Salva e Aplica o Nome do Curso
@@ -3900,8 +4575,12 @@
           const headerDisplay = document.getElementById('header-user-email');
           if (headerDisplay) headerDisplay.textContent = realUserName;
 
-          document.getElementById('login-container').style.display = 'none';
+          document.getElementById('loginModal').style.display = 'none';
           document.getElementById('app-content').style.display = 'block';
+          
+          /* CORREÇÃO: Força a tela a rolar para o topo absoluto */
+          window.scrollTo(0, 0);
+
           showNotification(`Bem-vindo ao ${userCourseName || 'Sistema'}!`);
 
           await loadAllData();
@@ -3912,9 +4591,7 @@
           errorElement.textContent = error.message;
           errorElement.style.display = 'block';
         } finally {
-          setButtonLoading(submitButton, false);
-          buttonIcon.style.display = 'inline-block';
-          buttonSpinner.style.display = 'none';
+          submitButton.disabled = false; // Re-enable button
         }
       }
     }
@@ -4012,11 +4689,12 @@
 
     function populateDisciplineFilter() {
       const filterSelect = document.getElementById("disciplineFilter");
+      const filterSelectMobile = document.getElementById("disciplineFilterMobile");
       if (filterSelect) {
         // 1. SALVA o que está selecionado antes de limpar
         const savedValue = filterSelect.value;
 
-        filterSelect.innerHTML = "<option value=\"\">Todas as Disciplinas</option>";
+        filterSelect.innerHTML = "<option value=\"\">Disciplinas</option>";
         const disciplines = [...new Set(allTopics.map(topic => topic.Disciplinas).filter(discipline => discipline))];
         disciplines.forEach(discipline => {
           const option = document.createElement("option");
@@ -4028,6 +4706,12 @@
         // 2. RESTAURA a seleção se ela ainda existir
         if (savedValue) {
           filterSelect.value = savedValue;
+        }
+
+        // 3. Popula o clone mobile também
+        if (filterSelectMobile) {
+          filterSelectMobile.innerHTML = filterSelect.innerHTML;
+          filterSelectMobile.value = filterSelect.value;
         }
       }
     }
@@ -4146,7 +4830,7 @@
             diffIcon = '<i class="fas fa-dizzy"></i>';
           }
 
-          const topicContent = `
+          const topicContent = `     
             <div class="topic-content">
               <div class="topic-discipline">${topic.Disciplinas ? topic.Disciplinas : "Sem disciplina"}</div>
               <div class="topic-title">
@@ -4155,15 +4839,14 @@
               ${topic.Subtópicos && topic.Subtópicos !== '—' ? `<div class="topic-subtopic">${topic.Subtópicos}</div>` : ''}
             </div>
             
-            <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="topic-right-panel">
 
-              <!-- NOVA SEÇÃO DE MÉTRICAS -->
-              <div class="topic-metrics" style="display: flex; gap: 8px; margin-right: 15px; font-size: 0.85rem; color: #ddd; align-items: center;">
+              <div class="topic-metrics" style="display: flex; gap: 8px; font-size: 0.85rem; color: #ddd; align-items: center;">
                  ${topic['N. de Páginas'] ? `<span title="Páginas"><i class="fas fa-book-open" style="margin-right:4px;"></i>${topic['N. de Páginas']}</span>` : ''}
                  ${topic['N. de Cards'] ? `<span title="Flashcards"><i class="fas fa-layer-group" style="margin-right:4px;"></i>${topic['N. de Cards']}</span>` : ''}
               </div>
               
-              <div style="display: flex; gap: 12px; margin-right: 5px;">
+              <div class="topic-dates-wrapper" style="display: flex; gap: 12px;">
                   <div style="display: flex; flex-direction: column; align-items: center;">
                       <span style="font-size: 0.6rem; color: #aaa; text-transform: uppercase;">Est</span>
                       <span id="date-est-index-${index}" style="font-size: 0.75rem; color: #fff;">${fmtData(topic['Data Estudo'])}</span>
@@ -4178,8 +4861,8 @@
                   </div>
               </div>
 
-              <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                <div style="display: flex; gap: 8px; font-size: 0.7rem; color: #FFF; font-weight: bold; margin-right: 12px; justify-content: center;">
+              <div class="topic-checkbox-group">
+                <div style="display: flex; gap: 8px; font-size: 0.7rem; color: #FFF; font-weight: bold; margin-bottom: 2px; justify-content: center; width: 100%;">
                   <span style="width: 22px; text-align: center;" title="Estudo">E</span>
                   <span style="width: 28px; text-align: center;" title="Revisões">R</span>
                   <span style="width: 22px; text-align: center;" title="Questões">Q</span>
@@ -4215,13 +4898,21 @@
           listItem.innerHTML = topicContent;
 
           // Event Listeners
-          listItem.addEventListener("click", (e) => {
-            if (!e.target.classList.contains('edit-icon') && !e.target.closest('.edit-icon')) {
-              showTopicDetails(topic.Seq);
-            }
-          });
+          listItem.innerHTML = topicContent;
+
+          // MUDANÇA: O bloco "listItem.addEventListener..." foi removido daqui.
+          // Agora o clique no texto não faz nada.
 
           const editIcon = listItem.querySelector('.edit-icon');
+          editIcon.addEventListener("click", (e) => {
+            e.stopPropagation();
+            showTopicDetails(topic.Seq);
+            setTimeout(() => {
+              if (!isEditMode) {
+                toggleEditMode();
+              }
+            }, 100);
+          });
           editIcon.addEventListener("click", (e) => {
             e.stopPropagation();
             showTopicDetails(topic.Seq);
@@ -4433,9 +5124,18 @@
 
 
     function filterTopics() {
-      const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-      const disciplineFilter = document.getElementById("disciplineFilter").value;
-      const statusFilter = document.getElementById("statusFilter").value; // Captura o novo filtro
+      // Lê de qualquer versão (desktop ou mobile) que tenha valor
+      const searchDesktop = document.getElementById("searchInput");
+      const searchMobile = document.getElementById("searchInputMobile");
+      const searchTerm = (searchDesktop && searchDesktop.value ? searchDesktop.value : (searchMobile ? searchMobile.value : '')).toLowerCase();
+
+      const discDesktop = document.getElementById("disciplineFilter");
+      const discMobile = document.getElementById("disciplineFilterMobile");
+      const disciplineFilter = discDesktop ? discDesktop.value : (discMobile ? discMobile.value : '');
+
+      const statusDesktop = document.getElementById("statusFilter");
+      const statusMobile = document.getElementById("statusFilterMobile");
+      const statusFilter = statusDesktop ? statusDesktop.value : (statusMobile ? statusMobile.value : '');
 
       filteredTopics = allTopics.filter(topic => {
         // 1. Filtro de Texto
@@ -4485,11 +5185,46 @@
       }
     }
 
+    // --- FUNÇÕES DE SINCRONIZAÇÃO MOBILE/DESKTOP ---
+    function toggleSearchMobile() {
+      const wrapper = document.getElementById('expandableSearchMobile');
+      const input = document.getElementById('searchInputMobile');
+      wrapper.classList.toggle('active');
+      if (wrapper.classList.contains('active')) {
+        setTimeout(() => input.focus(), 100);
+      }
+    }
+
+    function syncDisciplineFilter(source) {
+      const desktop = document.getElementById('disciplineFilter');
+      const mobile = document.getElementById('disciplineFilterMobile');
+      if (source === mobile && desktop) desktop.value = source.value;
+      if (source === desktop && mobile) mobile.value = source.value;
+    }
+
+    function syncSearchInput(source) {
+      const desktop = document.getElementById('searchInput');
+      const mobile = document.getElementById('searchInputMobile');
+      if (source === mobile && desktop) desktop.value = source.value;
+      if (source === desktop && mobile) mobile.value = source.value;
+    }
+
+    function syncStatusFilter(source) {
+      const desktop = document.getElementById('statusFilter');
+      const mobile = document.getElementById('statusFilterMobile');
+      if (source === mobile && desktop) desktop.value = source.value;
+      if (source === desktop && mobile) mobile.value = source.value;
+    }
+
     // Fecha o modal se clicar fora (Opcional, mas recomendado para UX)
     document.addEventListener('click', function (event) {
       const wrapper = document.getElementById('expandableSearch');
       if (wrapper && wrapper.classList.contains('active') && !wrapper.contains(event.target)) {
         wrapper.classList.remove('active');
+      }
+      const wrapperMobile = document.getElementById('expandableSearchMobile');
+      if (wrapperMobile && wrapperMobile.classList.contains('active') && !wrapperMobile.contains(event.target)) {
+        wrapperMobile.classList.remove('active');
       }
     });
     function updateCheckboxStatus(type) {
@@ -6158,11 +6893,11 @@
     </div>
   `;
 
-      // --- DOIS GRÁFICOS DE PIZZA LADO A LADO ---
+      // --- DOIS GRÁFICOS DE PIZZA LADO A LADO (AGORA RESPONSIVO) ---
       const graficosPizza = `
     <div class="overview-chart">
-      <div style="display: flex; justify-content: space-between; gap: 20px; padding: 10px;">
-        <!-- Gráfico de Pizza: Estudo -->
+      <div class="pizza-container">
+        
         <div style="flex: 1; display: flex; align-items: center; gap: 15px; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.3);">
           <div style="position: relative; width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(#4CAF50 0% ${(topicsEstudados / totalTopics) * 100}%, #F44336 ${(topicsEstudados / totalTopics) * 100}% 100%); box-shadow: 0 0 8px rgba(0,0,0,0.3);"></div>
           <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
@@ -6348,6 +7083,8 @@
 
     function filterByDiscipline(disciplineName) {
       document.getElementById('disciplineFilter').value = disciplineName;
+      const mobile = document.getElementById('disciplineFilterMobile');
+      if (mobile) mobile.value = disciplineName;
       filterTopics();
       document.getElementById('overviewModal').style.display = 'none';
       showSection("topics-list-container");
