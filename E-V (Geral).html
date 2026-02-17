@@ -3739,9 +3739,10 @@
       }
       
       .quick-controls {
-        gap: 8px !important; /* Garante que o CSS respeite o gap de 8px */
+        gap: 6px !important; /* Garante que o CSS respeite o gap de 6px */
       }
     }
+
   </style>
 </head>
 
@@ -4861,29 +4862,36 @@
                   </div>
               </div>
 
-              <div class="topic-checkbox-group">
-                <div style="display: flex; gap: 8px; font-size: 0.7rem; color: #FFF; font-weight: bold; margin-bottom: 2px; justify-content: center; width: 100%;">
-                  <span style="width: 22px; text-align: center;" title="Estudo">E</span>
-                  <span style="width: 28px; text-align: center;" title="Revisões">R</span>
-                  <span style="width: 22px; text-align: center;" title="Questões">Q</span>
-                  <span style="width: 22px; text-align: center;" title="Flashcards">F</span>
-                  <span style="width: 22px; text-align: center;" title="Dificuldade SRS">D</span>
+              <div class="topic-checkbox-group" style="display: flex; flex-direction: column; align-items: center; gap: 0;">
+                
+                <div style="display: flex; gap: 6px; font-size: 0.7rem; color: #FFF; font-weight: bold; margin-bottom: 2px; justify-content: center; width: auto;">
+                  <span style="width: 22px; text-align: center; display: inline-block;" title="Estudo">E</span>
+                  <span style="width: 28px; text-align: center; display: inline-block;" title="Revisões">R</span>
+                  <span style="width: 22px; text-align: center; display: inline-block;" title="Questões">Q</span>
+                  <span style="width: 22px; text-align: center; display: inline-block;" title="Flashcards">F</span>
+                  <span style="width: 22px; text-align: center; display: inline-block;" title="Dificuldade SRS">D</span>
                 </div>
 
-                <div class="quick-controls" onclick="event.stopPropagation()" style="display: flex; gap: 8px; justify-content: center;">
+                <div class="quick-controls" onclick="event.stopPropagation()" style="display: flex; gap: 6px; justify-content: center; width: auto; margin: 0; padding: 0;">
+                  
                   <div class="quick-checkbox ${estudoStatus ? 'checked-estudo' : ''}" 
+                       style="width: 22px; height: 22px; min-width: 22px; display: flex; justify-content: center; align-items: center; margin: 0;"
                        onclick="quickToggleEstudo('${topic.Seq}', ${index}, this)">${estudoStatus ? '✓' : ''}</div>
                   
                   <div class="quick-revisao-counter ${revisaoStatus ? 'has-revisoes' : ''}" 
+                       style="width: 28px; height: 22px; min-width: 28px; display: flex; justify-content: center; align-items: center; margin: 0; padding: 0;"
                        onclick="openRevisaoPopup(event, '${topic.Seq}', ${index}, ${revisaoCount})">${revisaoCount}</div>
                   
                   <div class="quick-checkbox ${questoesStatus ? 'checked-questoes' : ''}" 
+                       style="width: 22px; height: 22px; min-width: 22px; display: flex; justify-content: center; align-items: center; margin: 0;"
                        onclick="quickToggleQuestoes('${topic.Seq}', this)">${questoesStatus ? '✓' : ''}</div>
                   
                   <div class="quick-checkbox ${flashcardsStatus ? 'checked-flashcards' : ''}" 
+                       style="width: 22px; height: 22px; min-width: 22px; display: flex; justify-content: center; align-items: center; margin: 0;"
                        onclick="quickToggleFlashcards('${topic.Seq}', this)">${flashcardsStatus ? '✓' : ''}</div>
 
                   <div class="quick-difficulty-btn ${diffClass}" 
+                       style="width: 22px; height: 22px; min-width: 22px; display: flex; justify-content: center; align-items: center; margin: 0; padding: 0;"
                        onclick="quickCycleDifficulty(event, '${topic.Seq}', '${nivelDiff || ''}', this)"
                        title="Dificuldade: ${nivelDiff || 'Definir Dificuldade'}">
                        ${diffIcon}
