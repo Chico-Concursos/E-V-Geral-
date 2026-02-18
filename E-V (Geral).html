@@ -357,12 +357,12 @@
     #main-container {
         display: flex;
         flex-direction: column;
-        /* Ajuste: Agora ele ocupa 100% da altura disponível no iframe */
-        height: 100% !important; 
-        min-height: 80vh !important; 
+        /* Define a altura do container pai para ir até o fim da tela */
+        height: calc(100vh - 70px) !important; 
+        min-height: unset !important; /* Remove travas antigas */
         padding-bottom: 0 !important;
         margin-bottom: 0 !important;
-        gap: 0 !important;
+        gap: 0 !important; /* Remove espaços extras entre elementos */
       }
 
     .content-area {
@@ -374,14 +374,16 @@
    #topics-list-container {
         min-width: unset;
         max-width: unset;
-        flex: 1 1 auto !important; /* Força o crescimento vertical */
-        height: 100% !important;
-        display: flex;
-        flex-direction: column;
+        
+        /* OGRANDE TRUQUE: flex: 1 faz ele ocupar TODO o espaço que sobrar */
+        flex: 1 !important; 
+        height: auto !important; /* Deixa o flex controlar a altura */
+        
+        /* Remove bordas inferiores para encostar no fundo */
         margin-bottom: 0 !important;
-        border-bottom: 1px solid #333 !important; /* Mantém a linha de base visível */
-        border-bottom-left-radius: 6px !important;
-        border-bottom-right-radius: 6px !important;
+        border-bottom: none !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
       }
 
     .list-header {
