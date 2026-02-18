@@ -142,16 +142,17 @@
       border: 1px solid #333;
     }
 
-    header {
+   header {
       text-align: center;
-      padding: 08px 0;
+      padding: 0;           /* Removido espaço interno */
+      margin-top: -05px;      /* Pequeno respiro do teto */
+      margin-bottom: 0px;   /* Cola o título nos botões abaixo */
       color: #F7EF8A;
-      margin-bottom: 10px;
     }
 
     header h1 {
       font-size: 1.6rem;
-      margin-bottom: 5px;
+      margin-bottom: 10px;   /* Zerado para o menu subir */
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
       background: linear-gradient(to right, #D2AC47, #F7EF8A, #AE8625);
       -webkit-background-clip: text;
@@ -3184,7 +3185,8 @@
       width: auto !important;
       max-width: 140px;
       padding: 0 8px !important;
-      /* Espaço lateral para o texto não colar */
+      text-align-last: center; /* Centraliza o nome da disciplina selecionada */
+      text-align: center;      /* Garante a centralização em diferentes navegadores */
       border-radius: 50px !important;
     }
 
@@ -3661,59 +3663,153 @@
         display: none !important;
       }
 
-      /* 2. Layout Geral: Habilita Rolagem e Flexbox */
+      /* 2. TRAVAR A TELA (Para não ter rolagem dupla) */
       html, body {
-        height: auto !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        position: static !important;
+        height: 100vh !important; /* Altura fixa da tela */
+        margin: 0 !important;
+        overflow: hidden !important; /* Remove rolagem da página inteira */
       }
 
-      /* Container Principal Lado a Lado */
+      /* 3. O CONTAINER PRINCIPAL (AVÔ) */
       .container {
         display: flex !important;
         flex-direction: row !important;
-        align-items: flex-start !important;
+        align-items: stretch !important; /* OBRIGATÓRIO: Estica tudo até o chão */
         width: 100% !important;
-        max-width: 1200px !important; /* Limita largura no PC para não esticar demais */
-        margin: 0 auto; /* Centraliza na tela */
-        height: auto !important;
+        max-width: 1200px !important;
+        margin: 0 auto;
+        height: 100vh !important;       /* Ocupa exatamente a tela toda */
         min-height: 100vh !important;
-        padding-bottom: 40px !important;
+        padding-bottom: 0 !important;   /* Sem espaço no fundo */
+        overflow: hidden !important;
+        box-shadow: none !important;    /* Opcional: remove sombra externa */
+        border: none !important;
       }
 
-      /* 3. Coluna da Esquerda (Menu/Sidebar) - SE HOUVER */
-      /* Mantemos o código caso você use sidebar no futuro, mas oculto se não usar */
-      .sidebar {
-        display: none !important; /* Oculto pois seu design atual é top-bar */
+      .sidebar { display: none !important; }
+
+      /* 4. O PAI (Coluna Central) */
+      .app-container {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
       }
 
-      /* 4. Área de Conteúdo (Ocupa tudo) */
+      /* 5. A CAIXA DO APLICATIVO */
+      .progress-app {
+        flex: 1 !important;             /* Cresce para ocupar o espaço */
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;        /* Força altura total */
+        overflow: hidden !important;
+        margin-bottom: 0 !important;
+        border-radius: 0 !important;    /* Remove cantos arredondados inferiores */
+        padding-bottom: 0 !important;
+      }
+
+      #app-content {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        overflow: hidden !important;
+      }
+
       .main-content, 
-      .app-container,
       #main-container {
         flex: 1 !important;
-        width: 100% !important;
-        height: auto !important;
-        overflow: visible !important;
-        display: block !important;
-      }
-
-      .content-area {
-        height: auto !important;
         display: flex !important;
-        gap: 20px; /* Espaço entre a lista e o detalhe */
+        flex-direction: column !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
       }
 
-      /* 5. Lista de Tópicos */
+      /* 6. ÁREA DE CONTEÚDO (Lista + Detalhes) */
+   .content-area {
+        position: relative !important;   /* Define o limite para o posicionamento */
+        display: block !important;       
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;     /* Garante que nada saia da tela */
+        padding: 0 !important;
+      }
+
+      /* 7. O CONTAINER DA LISTA (Fica Sempre no Fundo) */
       #topics-list-container {
-        flex: 1 !important;
-        height: auto !important;
-        max-height: 80vh !important; /* Limita altura para ter rolagem interna se quiser */
-        overflow-y: auto !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: #000 !important;
+        border: 1px solid #333 !important;
+        margin: 0 !important;
+        z-index: 1 !important;           /* Camada Base */
       }
 
-      /* 6. CORREÇÃO ESPECÍFICA DO ALINHAMENTO DOS CHECKBOXES */
+      /* 8. A LISTA UL */
+      #topics-list {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        height: auto !important;
+        padding-bottom: 50px !important;
+      }
+
+      /* 9. O CONTAINER DE DETALHES (EDITOR FLUTUANTE NO TOPO) */
+      #topic-detail-container {
+        /* POSICIONAMENTO: Centralizado Horizontalmente, Travado no Topo */
+        position: absolute !important;
+        top: 0px !important;            
+        bottom: auto !important;
+        
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        
+        z-index: 10 !important; 
+        
+        /* --- MUDANÇA AQUI: AUMENTANDO A LARGURA --- */
+        width: 65% !important;           /* Era 60%. Agora ocupa quase toda a largura */
+        max-width: 900px !important;    /* Era 800px. Agora permite telas wide */
+        /* ------------------------------------------ */
+        
+        height: auto !important;
+        max-height: 90vh !important;
+        
+        background: #0d0d0d !important;
+        border: 2px solid #D2AC47 !important;
+        border-radius: 15px !important;
+        box-shadow: 0 0 50px rgba(0,0,0, 0.95) !important;
+        
+        display: none;
+        flex-direction: column !important;
+        padding: 15px 25px !important;
+        overflow-y: auto !important;
+        right: auto !important;
+      }
+
+      /* Botões de Ação (Salvar/Excluir) */
+      .topic-actions {
+        display: flex !important;
+        
+        /* O SEGREDO: Mudamos de 'flex-end' para 'center' */
+        justify-content: center !important; 
+        
+        align-items: center !important;
+        gap: 20px !important;            /* Espaço entre o botão Salvar e Cancelar */
+        
+        margin-top: auto !important;     /* Empurra para o final se sobrar altura */
+        padding-top: 20px !important;
+        padding-bottom: 10px !important; /* Um respiro no fundo */
+        
+        border-top: 1px solid #333 !important; /* Linha divisória sutil acima dos botões */
+        width: 100% !important;
+      }
+
+      /* 10. CORREÇÃO DOS CHECKBOXES NA LISTA */
       .topic-right-panel {
          display: flex !important;
          align-items: center !important;
@@ -3723,23 +3819,17 @@
 
       .topic-checkbox-group {
         display: flex !important;
-        flex-direction: column !important; /* Letras em cima, Caixas embaixo */
-        align-items: center !important;    /* Centraliza o bloco */
+        flex-direction: column !important;
+        align-items: center !important;
         justify-content: center !important;
-        gap: 0px !important;               /* Remove vão vertical extra */
         width: auto !important;
         border: none !important;
         background: transparent !important;
         margin-top: 0 !important;
       }
 
-      /* Garante que o container das letras e das caixas tenham o mesmo comportamento */
       .topic-checkbox-group > div {
          justify-content: center !important;
-      }
-      
-      .quick-controls {
-        gap: 6px !important; /* Garante que o CSS respeite o gap de 6px */
       }
     }
 
@@ -3853,7 +3943,7 @@
       
       <select id="disciplineFilter" onchange="filterTopics()" 
               style="max-width: 140px; height: 32px; padding: 0 8px; margin-right: 10px;">
-        <option value="">Todas as Disciplinas</option>
+        <option value="">Disciplinas</option>
       </select>
 
       <div class="search-wrapper" id="expandableSearch">
