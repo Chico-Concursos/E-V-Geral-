@@ -1802,11 +1802,98 @@
 
     .agenda-config {
       max-height: 65vh;
-      /* Limita a altura máxima da área de configurações */
       overflow-y: auto;
-      /* Adiciona a barra de rolagem vertical se o conteúdo ultrapassar a altura */
       padding: 0 15px 15px 10px;
-      /* Adiciona um preenchimento para a barra de rolagem não cobrir o conteúdo */
+    }
+
+    /* === TOOLTIPS INFORMATIVOS DA CONFIGURAÇÃO === */
+    .config-tooltip-wrapper {
+      margin-bottom: 15px;
+    }
+
+    .tooltip-icon {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(210, 172, 71, 0.3);
+      color: #D2AC47;
+      font-size: 0.65rem;
+      font-weight: bold;
+      margin-left: 6px;
+      cursor: help;
+      vertical-align: middle;
+      transition: all 0.2s ease;
+    }
+
+    .tooltip-icon:hover {
+      background: #D2AC47;
+      color: #000;
+      transform: scale(1.15);
+    }
+
+    .tooltip-icon .tooltip-box {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 10px); /* PADRÃO: Abre para cima */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+      border: 1px solid #D2AC47;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #eee;
+      font-size: 0.78rem;
+      font-weight: normal;
+      line-height: 1.5;
+      z-index: 3000;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      animation: tooltipFadeInUp 0.15s ease;
+      white-space: normal;
+      text-align: left;
+    }
+
+    .tooltip-icon .tooltip-box::after {
+      content: '';
+      position: absolute;
+      top: 100%; /* Seta em baixo apontando para cima */
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #D2AC47;
+    }
+
+    /* MODIFICADOR: TOOLTIP PARA BAIXO (Para o Foco Principal) */
+    .tooltip-icon.tooltip-down .tooltip-box {
+      bottom: auto;
+      top: calc(100% + 10px);
+      animation: tooltipFadeInDown 0.15s ease;
+    }
+
+    .tooltip-icon.tooltip-down .tooltip-box::after {
+      top: auto;
+      bottom: 100%;
+      border-top-color: transparent;
+      border-bottom-color: #D2AC47;
+    }
+
+    .tooltip-icon:hover .tooltip-box {
+      display: block;
+    }
+
+    @keyframes tooltipFadeInUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    @keyframes tooltipFadeInDown {
+      from { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
     /* Abas da Agenda */
@@ -6435,128 +6522,8 @@
     }
     // FIM NOVA FUNÇÃO allocateDailyStudyHours
 
-    // NOVA FUNÇÃO: Prepara e prioriza os tópicos para agendamento (novos e de revisão)
-
-    function prepareTopicsForScheduling(focoPrincipalConfig, distribuicaoConfig, allTopics, globalMetas) {
-      // Separa os tópicos em "para estudar" (novo conteúdo) e "para revisar)
-
-      // <<< AQUI ESTÁ A CORREÇÃO PRINCIPAL: A variável 'config' é declarada APENAS UMA VEZ >>>
-      const config = JSON.parse(localStorage.getItem('agendaConfig') || '{}');
-      const excludedDiscipline = config.excludeDisciplina || '';
-
-      // Filtra a disciplina excluída ANTES de qualquer outra lógica
-      const availableTopics = excludedDiscipline
-        ? allTopics.filter(t => t.Disciplinas !== excludedDiscipline)
-        : allTopics;
-
-      let topicsToStudy = availableTopics.filter(t => t['Status Estudo'] !== 'Concluido');
-
-      // --- INÍCIO DA LÓGICA INTEGRADA DO SRS ---
-      const baseRevisaoConfig = config.baseRevisao || '1';
-      let topicsToReviewOriginal = [];
-
-      // DECIDE A FONTE DOS TÓPICOS DE REVISÃO (SRS ou LÓGICA PADRÃO)
-      if (baseRevisaoConfig === 'srs') {
-        // Se o modo SRS estiver ativo, usa nossa nova função inteligente
-        topicsToReviewOriginal = getTopicsForSrsReview();
-      } else {
-        // Senão, usa a lógica padrão que já existia
-        topicsToReviewOriginal = availableTopics.filter(t => t['Status Estudo'] === 'Concluído' && (parseInt(t['Revisao Count']) || 0) < 4);
-      }
-      // --- FIM DA LÓGICA INTEGRADA DO SRS ---
-
-      // --- Implementação da proporção 2:1 (agora opera sobre a lista correta, seja ela do SRS ou não) ---
-      const SMALL_TOPIC_PAGES_THRESHOLD = 5;
-      let smallReviewTopics = topicsToReviewOriginal.filter(t => (parseInt(t['N. de Páginas']) || 0) < SMALL_TOPIC_PAGES_THRESHOLD);
-      let largeReviewTopics = topicsToReviewOriginal.filter(t => (parseInt(t['N. de Páginas']) || 0) >= SMALL_TOPIC_PAGES_THRESHOLD);
-
-      smallReviewTopics.sort((a, b) => parseInt(a.Seq) - parseInt(b.Seq));
-      largeReviewTopics.sort((a, b) => parseInt(a.Seq) - parseInt(b.Seq));
-
-      let topicsToReview = [];
-      let smallIdx = 0;
-      let largeIdx = 0;
-
-      while (smallIdx < smallReviewTopics.length || largeIdx < largeReviewTopics.length) {
-        for (let i = 0; i < 2 && smallIdx < smallReviewTopics.length; i++) {
-          topicsToReview.push(smallReviewTopics[smallIdx++]);
-        }
-        if (largeIdx < largeReviewTopics.length) {
-          topicsToReview.push(largeReviewTopics[largeIdx++]);
-        }
-      }
-      while (smallIdx < smallReviewTopics.length) {
-        topicsToReview.push(smallReviewTopics[smallIdx++]);
-      }
-      while (largeIdx < largeReviewTopics.length) {
-        topicsToReview.push(largeReviewTopics[largeIdx++]);
-      }
-      // --- Fim da implementação da proporção 2:1 ---
-
-      // Aplica a distribuição por disciplina
-      function applyDisciplineDistribution(topics, distributionType) {
-        const disciplines = [...new Set(topics.map(t => t.Disciplinas).filter(d => d))];
-        let distributedTopics = [];
-
-        if (distributionType === 'igual') {
-          distributedTopics = [...topics].sort(() => Math.random() - 0.5);
-        } else if (distributionType === 'peso') {
-          const disciplineWeights = {};
-          disciplines.forEach(d => {
-            const cleanDiscName = d.replace(/[^a-zA-Z0-9çãáéíóúâêôõüÇÃÁÉÍÓÚÂÊÔÕÜ\s]/g, '').replace(/ /g, '_');
-            disciplineWeights[d] = parseInt(globalMetas[cleanDiscName]?.value || 0);
-          });
-
-          disciplines.sort((a, b) => disciplineWeights[b] - disciplineWeights[a]);
-
-          let disciplineQueues = {};
-          disciplines.forEach(d => disciplineQueues[d] = topics.filter(t => t.Disciplinas === d).sort((a, b) => parseInt(a.Seq) - parseInt(b.Seq)));
-
-          let allQueuesEmpty = false;
-          let currentDisciplineIndex = 0;
-          while (!allQueuesEmpty) {
-            allQueuesEmpty = true;
-            const currentDisc = disciplines[currentDisciplineIndex];
-            if (disciplineQueues[currentDisc] && disciplineQueues[currentDisc].length > 0) {
-              distributedTopics.push(disciplineQueues[currentDisc].shift());
-              allQueuesEmpty = false;
-            }
-            currentDisciplineIndex = (currentDisciplineIndex + 1) % disciplines.length;
-
-            if (allQueuesEmpty) {
-              allQueuesEmpty = Object.values(disciplineQueues).every(queue => queue.length === 0);
-            }
-          }
-        } else {
-          distributedTopics = [...topics].sort(() => Math.random() - 0.5);
-        }
-        return distributedTopics;
-      }
-
-      topicsToStudy = applyDisciplineDistribution(topicsToStudy, distribuicaoConfig);
-      topicsToReview = applyDisciplineDistribution(topicsToReview, distribuicaoConfig);
-
-      let finalNewTopics = [];
-      let finalReviewTopics = [];
-
-      if (focoPrincipalConfig === 'novos') {
-        finalNewTopics = topicsToStudy;
-        finalReviewTopics = []; // Modo Puro: Sem revisões forçadas
-      } else if (focoPrincipalConfig === 'revisao') {
-        finalReviewTopics = topicsToReview;
-        finalNewTopics = []; // Modo Puro: Sem novos tópicos forçados
-      } else if (focoPrincipalConfig === 'balanceado' || focoPrincipalConfig === 'chico-concursos') {
-        finalNewTopics = topicsToStudy;
-        finalReviewTopics = topicsToReview;
-      } else if (focoPrincipalConfig === 'questoes') {
-        finalReviewTopics = topicsToReview.filter(t => t['Status Questões'] !== 'Concluído' && t['Status Estudo'] === 'Concluído');
-        finalNewTopics = topicsToStudy.filter(t => t['Status Questões'] !== 'Concluido');
-        finalNewTopics.sort(() => Math.random() - 0.5);
-        finalReviewTopics.sort(() => Math.random() - 0.5);
-      }
-
-      return { newTopics: finalNewTopics || [], reviewTopics: finalReviewTopics || [] };
-    }
+    // NOTA: A função prepareTopicsForScheduling foi removida daqui (era duplicada).
+    // A versão definitiva está na seção "FUNÇÃO INTELIGENTE", com o parâmetro 'deadlineDate'.
 
     // NOVA FUNÇÃO PARA SINCRONIZAR CHECKBOXES
     function syncPeriodCheckboxes(sourceCheckbox, targetGroup) {
@@ -8267,15 +8234,28 @@
       // Cabeçalho dos períodos (primeira coluna, vazia para alinhar)
       gridHTML += '<div></div>';
 
+      // Ler configuração de dias ativos
+      const configKey = (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? `agendaConfig_${SHEET_ID}` : 'agendaConfig';
+      const config = JSON.parse(localStorage.getItem(configKey) || '{}');
+      // Padrão: Segunda a Sexta
+      const activeDays = config.activeDays || ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+
       // Cabeçalho dos dias com a data correta
       days.forEach((day, index) => {
         const currentDate = new Date(monday);
         currentDate.setDate(monday.getDate() + index);
         const dateString = currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         const isToday = day === todayName;
+        const isChecked = activeDays.includes(day) ? 'checked' : '';
 
-        // Adiciona a classe 'today' se for o dia atual
-        gridHTML += `<div class="day-header ${isToday ? 'today' : ''}">${day}<br><span style="font-size: 0.8em; color: #ccc;">${dateString}</span></div>`;
+        // Adiciona a classe 'today' se for o dia atual, e adiciona o checkbox
+        gridHTML += `<div class="day-header ${isToday ? 'today' : ''}">
+            <label style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; margin: 0;">
+                <input type="checkbox" class="day-checkbox" data-day="${day}" ${isChecked} onchange="syncActiveDays()" style="cursor: pointer; transform: scale(1.1);">
+                ${day}
+            </label>
+            <span style="font-size: 0.8em; color: #ccc; margin-top: 2px; display: block;">${dateString}</span>
+        </div>`;
       });
 
       // Gera as linhas para cada período (Manhã, Tarde, Noite)
@@ -8325,7 +8305,8 @@
       updateWeekDateRange();
 
       // Carregar preferências salvas do localStorage
-      const config = JSON.parse(localStorage.getItem('agendaConfig') || '{}');
+      const configKey = (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? `agendaConfig_${SHEET_ID}` : 'agendaConfig';
+      const config = JSON.parse(localStorage.getItem(configKey) || '{}');
       const mostrarManha = config.periodos?.includes('manha') ?? true;
       const mostrarTarde = config.periodos?.includes('tarde') ?? true;
       const mostrarNoite = config.periodos?.includes('noite') ?? true;
@@ -8351,6 +8332,61 @@
         }
       }, 100); // Pequeno delay para garantir que a interface foi renderizada
       // --- FIM DA MODIFICAÇÃO ---
+    }
+
+    function syncPeriodCheckboxes(sourceElement, targetPrefix) {
+      if (!sourceElement) return;
+      const isChecked = sourceElement.checked;
+      
+      let period = '';
+      if (sourceElement.id.includes('manha')) period = 'manha';
+      else if (sourceElement.id.includes('tarde')) period = 'tarde';
+      else if (sourceElement.id.includes('noite')) period = 'noite';
+      
+      if (!period) return;
+
+      const targetId = targetPrefix === 'config' ? `config-periodo-${period}` : `periodo-${period}`;
+      const targetCheckbox = document.getElementById(targetId);
+      if (targetCheckbox) {
+        targetCheckbox.checked = isChecked;
+      }
+
+      if (typeof updatePeriodoVisibility === 'function') {
+        updatePeriodoVisibility();
+      }
+
+      const configKey = (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? `agendaConfig_${SHEET_ID}` : 'agendaConfig';
+      const config = JSON.parse(localStorage.getItem(configKey) || '{}');
+      
+      config.periodos = [
+        document.getElementById('periodo-manha')?.checked ? 'manha' : null,
+        document.getElementById('periodo-tarde')?.checked ? 'tarde' : null,
+        document.getElementById('periodo-noite')?.checked ? 'noite' : null
+      ].filter(Boolean);
+
+      localStorage.setItem(configKey, JSON.stringify(config));
+    }
+
+    function syncActiveDays() {
+      const activeDays = Array.from(document.querySelectorAll('.day-checkbox'))
+        .filter(cb => cb.checked)
+        .map(cb => cb.dataset.day);
+
+      const configKey = (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? `agendaConfig_${SHEET_ID}` : 'agendaConfig';
+      const config = JSON.parse(localStorage.getItem(configKey) || '{}');
+      config.activeDays = activeDays;
+      
+      // Atualiza o input legado visualmente para manter coerência
+      const diasInput = document.getElementById('config-dias-semana');
+      if (diasInput) diasInput.value = activeDays.length;
+      config.diasSemana = activeDays.length; // Retrocompatibilidade
+      
+      localStorage.setItem(configKey, JSON.stringify(config));
+
+      // Se importarMetas estiver ativo, salva no perfil global
+      if (config.importarMetas) {
+        saveUserGoalSpecificField('Meta Dias Estudo', activeDays.length);
+      }
     }
 
     function populateDisciplineDropdown() {
@@ -8667,22 +8703,51 @@
         }
       });
     }
-    function deleteAgendaItem(itemIndex) {
-      // Pede confirmação ao usuário antes de deletar
+    // CORREÇÃO: Funções que usam UID estável em vez de índice mutável
+    function findAgendaIndexByUid(uid) {
+      const [data, disciplina, topico] = uid.split('|');
+      return window.agendaData.findIndex(item =>
+        item.Data === data && item.Disciplina === disciplina && item.TopicosSugeridos === topico
+      );
+    }
+
+    function deleteAgendaItemByUid(uid) {
       showConfirm('Deseja excluir este bloco de estudo do calendário?', (confirmed) => {
         if (confirmed) {
-          // Remove o item do array de dados da agenda usando seu índice
-          window.agendaData.splice(itemIndex, 1);
-
-          // Redesenha o calendário mensal para refletir a remoção
+          const idx = findAgendaIndexByUid(uid);
+          if (idx === -1) {
+            showNotification('Bloco não encontrado.', 'error');
+            return;
+          }
+          window.agendaData.splice(idx, 1);
           generateCalendar();
-
-          // Salva a alteração na planilha
+          calculateMonthlyStats();
           saveAgenda();
-
           showNotification('Bloco excluído com sucesso do calendário!');
         }
       });
+    }
+
+    // Mantém compatibilidade com chamadas antigas por índice
+    function deleteAgendaItem(itemIndex) {
+      showConfirm('Deseja excluir este bloco de estudo do calendário?', (confirmed) => {
+        if (confirmed) {
+          window.agendaData.splice(itemIndex, 1);
+          generateCalendar();
+          calculateMonthlyStats();
+          saveAgenda();
+          showNotification('Bloco excluído com sucesso do calendário!');
+        }
+      });
+    }
+
+    function editAgendaItemByUid(uid) {
+      const idx = findAgendaIndexByUid(uid);
+      if (idx === -1) {
+        showNotification('Bloco não encontrado.', 'error');
+        return;
+      }
+      editAgendaItem(idx);
     }
 
     function editAgendaItem(itemIndex) {
@@ -8771,6 +8836,11 @@
     // ==================== ATUALIZAÇÃO DE DADOS ====================
 
     function updateAgendaData() {
+      // CORREÇÃO: Só reconstrói os dados a partir do DOM se a grade semanal estiver visível.
+      // Se estiver na aba mensal ou config, os slots não existem e os dados seriam perdidos.
+      const firstSlot = document.getElementById('slot-Segunda-Manhã');
+      if (!firstSlot) return; // Mantém window.agendaData intacto
+
       const agendaData = [];
       const days = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
       const periods = ['Manhã', 'Tarde', 'Noite'];
@@ -8823,8 +8893,9 @@
           document.querySelectorAll('.slot-content').forEach(slot => slot.innerHTML = '');
         }
 
-        const config = JSON.parse(localStorage.getItem('agendaConfig') || '{}');
-        const diasSemanaConfig = parseInt(config.diasSemana || '5');
+        const configKey = (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? `agendaConfig_${SHEET_ID}` : 'agendaConfig';
+        const config = JSON.parse(localStorage.getItem(configKey) || '{}');
+        const diasSemanaConfig = config.activeDays ? config.activeDays.length : parseInt(config.diasSemana || '5');
         const topicosDiaConfig = parseInt(config.topicosDia || '0');
         const focoPrincipalConfig = config.focoPrincipal || 'balanceado';
         const baseAgendaConfig = config.baseAgenda || 'meta-diaria-topicos';
@@ -8844,17 +8915,24 @@
         const todayName = weekdays[today.getDay()];
 
         // Lógica para definir quais dias vamos preencher
+        let activeDays = config.activeDays;
+        if (!activeDays || activeDays.length === 0) {
+            activeDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']; // Padrão
+        }
+        
         let diasParaPreencher = [];
 
         if (mode === 'daily') {
           // Se for diário, preenchemos APENAS o dia de hoje
           diasParaPreencher = [todayName];
         } else {
-          // Se for semanal, lógica original
-          const todayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
+          // Pega apenas os dias marcados que ainda não passaram na semana atual
           const todosOsDiasDaSemana = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-          const diasDeEstudoConfigurados = todosOsDiasDaSemana.slice(0, diasSemanaConfig);
-          diasParaPreencher = diasDeEstudoConfigurados.filter((_, index) => index >= todayIndex);
+          const todayIndex = todosOsDiasDaSemana.indexOf(todayName);
+          
+          diasParaPreencher = activeDays.filter(day => {
+              return todosOsDiasDaSemana.indexOf(day) >= todayIndex;
+          });
         }
 
         if (diasParaPreencher.length === 0) {
@@ -8863,11 +8941,15 @@
         }
 
         const availableSlots = [];
-        diasParaPreencher.forEach(day => {
-          if (periodosConfig.includes('manha')) availableSlots.push({ dia: day, periodo: 'Manhã' });
-          if (periodosConfig.includes('tarde')) availableSlots.push({ dia: day, periodo: 'Tarde' });
-          if (periodosConfig.includes('noite')) availableSlots.push({ dia: day, periodo: 'Noite' });
-        });
+        // DISTRIBUIÇÃO UNIFORME: Construímos os slots rodando por período entre os dias ativos.
+        // Assim, o gerador preenche primeiro as manhãs de todos os dias, depois as tardes, espalhando a carga.
+        for (let pIndex = 0; pIndex < 3; pIndex++) {
+            diasParaPreencher.forEach(day => {
+                if (pIndex === 0 && periodosConfig.includes('manha')) availableSlots.push({ dia: day, periodo: 'Manhã' });
+                if (pIndex === 1 && periodosConfig.includes('tarde')) availableSlots.push({ dia: day, periodo: 'Tarde' });
+                if (pIndex === 2 && periodosConfig.includes('noite')) availableSlots.push({ dia: day, periodo: 'Noite' });
+            });
+        }
 
         if (availableSlots.length === 0) {
           showNotification('Nenhum slot disponível nos períodos selecionados.', 'error');
@@ -9039,7 +9121,7 @@
         ? allTopics.filter(t => t.Disciplinas !== excludedDiscipline)
         : allTopics;
 
-      let topicsToStudy = availableTopics.filter(t => t['Status Estudo'] !== 'Concluido');
+      let topicsToStudy = availableTopics.filter(t => t['Status Estudo'] !== 'Concluído');
 
       const baseRevisaoConfig = config.baseRevisao || '1';
       let topicsToReviewOriginal = [];
@@ -9307,19 +9389,24 @@
                style="background: ${isToday ? '#333' : '#222'}; border-radius: 4px; min-height: 80px; padding: 5px; border: 1px solid #444; position: relative; display: flex; flex-direction: column; gap: 4px;">
             <div style="font-weight: bold; color: ${isToday ? '#F7EF8A' : '#fff'};">${day}</div>
             <div class="day-studies" style="font-size: 0.75rem; flex-grow: 1;">
-              ${dayAgendaWithIndices.map(({ item, index }) => `
+              ${dayAgendaWithIndices.map(({ item, index }) => {
+                // CORREÇÃO: Gera um UID estável baseado nos dados, não no índice mutável
+                const uid = `${item.Data}|${item.Disciplina}|${item.TopicosSugeridos}`;
+                const safeUid = uid.replace(/'/g, "\\'");
+                return `
                 <div style="background: #3a3a3a; color: #fff; margin-top: 2px; padding: 4px; border-radius: 3px; border-left: 3px solid ${getPriorityColor(item.Prioridade)};">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.TopicosSugeridos}">
                       ${item.Disciplina} (${item.Horas}h)
                     </span>
                     <div style="display: flex; gap: 3px;">
-                      <button onclick="editAgendaItem(${index})" style="background:none; border:none; color:#D2AC47; cursor:pointer; font-size: 0.8rem; padding: 2px;"><i class="fas fa-pencil-alt"></i></button>
-                      <button onclick="deleteAgendaItem(${index})" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size: 0.8rem; padding: 2px;"><i class="fas fa-trash-alt"></i></button>
+                      <button onclick="editAgendaItemByUid('${safeUid}')" style="background:none; border:none; color:#D2AC47; cursor:pointer; font-size: 0.8rem; padding: 2px;"><i class="fas fa-pencil-alt"></i></button>
+                      <button onclick="deleteAgendaItemByUid('${safeUid}')" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size: 0.8rem; padding: 2px;"><i class="fas fa-trash-alt"></i></button>
                     </div>
                   </div>
                 </div>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
           </div>
         `;
@@ -9331,10 +9418,17 @@
     function calculateMonthlyStats() {
       if (!window.agendaData) return;
 
-      const monthlyHours = window.agendaData.reduce((total, item) => total + parseFloat(item.Horas || 0), 0);
-      const completedBlocks = window.agendaData.filter(item => item.Concluido === 'Sim').length;
-      const uniqueDisciplines = [...new Set(window.agendaData.map(item => item.Disciplina))].length;
-      const studyDays = [...new Set(window.agendaData.map(item => item.Data))].length;
+      // CORREÇÃO: Filtra apenas os eventos do mês/ano visível no calendário
+      const year = window.currentYear;
+      const month = window.currentMonth;
+      const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+      const monthData = window.agendaData.filter(item => item.Data && item.Data.startsWith(monthPrefix));
+
+      const monthlyHours = monthData.reduce((total, item) => total + parseFloat(item.Horas || 0), 0);
+      const completedBlocks = monthData.filter(item => item.Concluido === 'Sim').length;
+      const uniqueDisciplines = [...new Set(monthData.map(item => item.Disciplina))].length;
+      const studyDays = [...new Set(monthData.map(item => item.Data))].length;
 
       document.getElementById('monthly-hours').textContent = `${monthlyHours}h`;
       document.getElementById('monthly-completed').textContent = completedBlocks;
@@ -9423,10 +9517,23 @@
             <!-- Coluna da Esquerda: Preferências -->
             <div class="config-section" style="flex: 1;">
             <h5 style="color: #D2AC47; margin-bottom: 15px;">📅 Preferências de Agendamento</h5>
-            
+
+            <!-- NOVO CAMPO: Importar Metas Globais -->
+            <div class="form-field" style="margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed #444;">
+                <label style="display: flex; align-items: center; cursor: pointer; color: #F7EF8A; font-weight: bold;">
+                    <input type="checkbox" id="config-importar-metas" checked onchange="toggleImportMetas()" style="margin-right: 8px; cursor: pointer; transform: scale(1.2);">
+                    Vincular às Metas Globais
+                </label>
+                <div style="font-size: 0.75rem; color: #aaa; margin-top: 5px; margin-left: 22px;">
+                    Se desmarcado, as metas serão <b>exclusivas</b> deste edital (iniciam zeradas) e não alterarão seu perfil geral.
+                </div>
+            </div>
             <div class="form-field" style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px; color: #fff;">Dias de Estudo por Semana:</label>
-                <input type="number" id="config-dias-semana" min="1" max="7" value="5" style="width: 100%; padding: 8px; border-radius: 4px; background: #222; color: #fff; border: 1px solid #555;">
+                <input type="number" id="config-dias-semana" min="1" max="7" value="5" readonly title="Marque os dias diretamente no cabeçalho da Agenda" style="width: 100%; padding: 8px; border-radius: 4px; background: #333; color: #aaa; border: 1px solid #555; cursor: not-allowed;">
+                <div style="font-size: 0.75rem; color: #888; margin-top: 5px;">
+                    * Selecione os dias diretamente nas <b>caixinhas do cabeçalho da aba "Semanal"</b>.
+                </div>
             </div>
             
                             <div class="form-field" style="margin-bottom: 15px;">
@@ -9444,13 +9551,13 @@
                 <label style="display: block; margin-bottom: 5px; color: #fff;">Períodos Preferidos:</label>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <label style="color: #fff; display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="config-periodo-manha" checked> Manhã
+                    <input type="checkbox" id="config-periodo-manha" checked onchange="syncPeriodCheckboxes(this, 'grid')"> Manhã
                 </label>
                 <label style="color: #fff; display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="config-periodo-tarde" checked> Tarde
+                    <input type="checkbox" id="config-periodo-tarde" checked onchange="syncPeriodCheckboxes(this, 'grid')"> Tarde
                 </label>
                 <label style="color: #fff; display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="config-periodo-noite"> Noite
+                    <input type="checkbox" id="config-periodo-noite" onchange="syncPeriodCheckboxes(this, 'grid')"> Noite
                 </label>
                 </div>
             </div>
@@ -9460,21 +9567,44 @@
             <div class="config-section" style="flex: 1;">
             <h5 style="color: #D2AC47; margin-bottom: 15px;">🎯 Metas de Estudo</h5>
             
-                            <div class="form-field" style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; color: #fff;">Foco Principal:</label>
-                <!-- >>>>> LINHA MODIFICADA AQUI <<<<< -->
-                <!-- NOVO CÓDIGO COM A DICA -->
+            <!-- FOCO PRINCIPAL -->
+            <div class="config-tooltip-wrapper">
+                <label style="display: block; margin-bottom: 5px; color: #fff;">Foco Principal:
+                  <span class="tooltip-icon tooltip-down">?
+                    <div class="tooltip-box">
+                      <strong style="color: #F7EF8A;">📌 Foco Principal</strong><br>
+                      Define a <b>prioridade geral</b> da sua agenda:<br>
+                      • <b>Novos Conteúdos</b> — Só tópicos novos.<br>
+                      • <b>Revisão</b> — Só revisões.<br>
+                      • <b>Balanceado</b> — Mistura novo + revisão.<br>
+                      • <b>Questões</b> — Foco em resolver questões.<br>
+                      • <b>Chico Concursos</b> — Proporção adaptativa conforme seu progresso.
+                    </div>
+                  </span>
+                </label>
 <select id="config-foco-principal" onchange="updateConfigUI()" style="width: 100%; padding: 8px; border-radius: 4px; background: #222; color: #fff; border: 1px solid #555;">
     <option value="novos">Novos Conteúdos</option>
     <option value="revisao">Revisão</option>
     <option value="balanceado">Balanceado</option>
     <option value="questoes">Resolução de Questões</option>
-    <option value="chico-concursos" title="Método adaptativo que ajusta a proporção de conteúdo novo vs. revisão com base no seu percentual de progresso no edital.">Método Chico Concursos</option>
+    <option value="chico-concursos">Método Chico Concursos</option>
 </select>
             </div>
-            <!-- NOVO CAMPO: Base da Agenda -->
-            <div class="form-field" style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; color: #fff;">Base Conteúdo (Médias):</label>
+
+            <!-- BASE CONTEÚDO -->
+            <div class="config-tooltip-wrapper">
+                <label style="display: block; margin-bottom: 5px; color: #fff;">Base Conteúdo (Médias):
+                  <span class="tooltip-icon">?
+                    <div class="tooltip-box">
+                      <strong style="color: #F7EF8A;">📊 Base do Conteúdo</strong><br>
+                      Quantos <b>tópicos novos</b> por dia:<br>
+                      • <b>Nenhum</b> — Sem conteúdo automático.<br>
+                      • <b>Meta Diária</b> — Valor digitado em "Tópicos/Dia".<br>
+                      • <b>Médias Edital</b> — Total Temas ÷ Dias p/ Prova.<br>
+                      • <b>Suas Médias</b> — Seu ritmo real de estudo.
+                    </div>
+                  </span>
+                </label>
 <select id="config-base-agenda" style="width: 100%; padding: 8px; border-radius: 4px; background: #222; color: #fff; border: 1px solid #555;">
     <option value="nenhum">Nenhum Conteúdo Automático</option>
     <option value="meta-diaria-topicos">🎯 Meta Diária (Digitada)</option>
@@ -9482,39 +9612,63 @@
     <option value="medias-personalizadas">💪SUAS Médias Personalizadas</option>
 </select>
             </div>
-            <!-- FIM NOVO CAMPO -->
             
-            <!-- NOVO CAMPO: Base da Revisão -->
-      <div class="form-field" style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; color: #fff;">Base da Revisão Diária:</label>
-        <!-- NOVO CÓDIGO COM A DICA -->
+            <!-- BASE REVISÃO -->
+            <div class="config-tooltip-wrapper">
+                <label style="display: block; margin-bottom: 5px; color: #fff;">Base da Revisão Diária:
+                  <span class="tooltip-icon">?
+                    <div class="tooltip-box">
+                      <strong style="color: #F7EF8A;">🔄 Base da Revisão</strong><br>
+                      Quantas <b>revisões</b> por dia:<br>
+                      • <b>Nenhuma</b> — Sem revisão automática.<br>
+                      • <b>1, 2 ou 3/Dia</b> — Número fixo.<br>
+                      • <b>SRS</b> — Algoritmo inteligente tipo Anki.<br>
+                      • <b>Médias Raio X</b> — Baseado no edital/progresso.
+                    </div>
+                  </span>
+                </label>
 <select id="config-base-revisao" style="width: 100%; padding: 8px; border-radius: 4px; background: #222; color: #fff; border: 1px solid #555;">
   <option value="0">Nenhuma Revisão Automática</option>
   <option value="1" selected>1 Revisão por Dia</option>
   <option value="2">2 Revisões por Dia</option>
   <option value="3">3 Revisões por Dia</option>
-  <option value="srs" title="Agenda automaticamente os tópicos que precisam ser revisados hoje, com base na data do estudo, dificuldade e número de revisões já feitas (método Anki).">Sistema de Repetição Espaçada (Automático)</option>
+  <option value="srs">Sistema de Repetição Espaçada (Automático)</option>
   <option value="medias-recomendadas-revisao">📅 Médias Diárias Recomendadas (Raio X)</option>
   <option value="medias-personalizadas-revisao">💪 SUAS Médias Personalizadas (Raio X)</option>
 </select>
-        <!-- >>>>> MENSAGEM DE AJUDA ADICIONADA AQUI <<<<< -->
-        <div id="chico-helper" class="chico-helper-text">
-            Estes campos definem o <b>volume total</b> de blocos. O método aplicará a proporção dinâmica sobre este total.
-        </div>
-      </div>
+                <div id="chico-helper" class="chico-helper-text">
+                    Estes campos definem o <b>volume total</b> de blocos. O método aplicará a proporção dinâmica sobre este total.
+                </div>
+            </div>
         
-        <!-- SEU NOVO CÓDIGO COMEÇA AQUI -->
-            <div class="form-field" style="margin-bottom: 15px;">
-            <label style="display: block; margin-bottom: 5px; color: #fff;">Excluir Disciplina da Geração:</label>
-            <select id="config-exclude-disciplina" style="width: 100%; padding: 8px; border-radius: 4px; background: #222; color: #fff; border: 1px solid #555;">
-            <!-- A MODIFICAÇÃO ESTÁ AQUI -->
-            ${disciplineOptions}
+            <!-- EXCLUIR DISCIPLINA -->
+            <div class="config-tooltip-wrapper">
+                <label style="display: block; margin-bottom: 5px; color: #fff;">Excluir Disciplina:
+                  <span class="tooltip-icon">?
+                    <div class="tooltip-box">
+                      <strong style="color: #F7EF8A;">🚫 Excluir Disciplina</strong><br>
+                      Remove uma disciplina da geração automática. Útil para focar nas demais matérias.
+                    </div>
+                  </span>
+                </label>
+                <select id="config-exclude-disciplina" style="width: 100%; padding: 8px; border-radius: 4px; background: #222; color: #fff; border: 1px solid #555;">
+                ${disciplineOptions}
                 </select>
             </div>
-            <!-- FIM DO NOVO CÓDIGO -->
         
-            <div class="form-field" style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; color: #fff;">Distribuição por Disciplina:</label>
+            <!-- DISTRIBUIÇÃO POR DISCIPLINA -->
+            <div class="config-tooltip-wrapper">
+                <label style="display: block; margin-bottom: 5px; color: #fff;">Distribuição por Disciplina:
+                  <span class="tooltip-icon">?
+                    <div class="tooltip-box">
+                      <strong style="color: #F7EF8A;">⚖️ Distribuição</strong><br>
+                      Como os tópicos são distribuídos:<br>
+                      • <b>Igual</b> — Aleatório, sem prioridade.<br>
+                      • <b>Por Peso</b> — Mais blocos p/ disciplinas com mais peso.<br>
+                      • <b>Por Dificuldade</b> — Prioriza suas matérias difíceis.
+                    </div>
+                  </span>
+                </label>
                 <select id="config-distribuicao" style="width: 100%; padding: 8px; border-radius: 4px; background: #222; color: #fff; border: 1px solid #555;">
                 <option value="igual">Igual para Todas</option>
                 <option value="peso">Por Peso no Edital</option>
@@ -9560,13 +9714,36 @@
       updateConfigUI(); // Atualiza a interface assim que abre
     }
 
-    function loadConfig() {
-      const config = JSON.parse(localStorage.getItem('agendaConfig') || '{}');
+    function toggleImportMetas() {
+      const isChecked = document.getElementById('config-importar-metas').checked;
+      if (isChecked) {
+        document.getElementById('config-dias-semana').value = currentUserGoals['Meta Dias Estudo'] || '5';
+        document.getElementById('config-horas-dia').value = currentUserGoals['Meta Horas Estudo'] || '4';
+        document.getElementById('config-topicos-dia').value = currentUserGoals['Meta Diária Tópicos'] || '0';
+      } else {
+        document.getElementById('config-dias-semana').value = '0';
+        document.getElementById('config-horas-dia').value = '0';
+        document.getElementById('config-topicos-dia').value = '0';
+      }
+      updateConfigUI();
+    }
 
-      // Carrega os valores salvos ou, se não existirem, busca das metas do usuário ou um padrão
-      document.getElementById('config-dias-semana').value = config.diasSemana ?? (currentUserGoals['Meta Dias Estudo'] || '5');
-      document.getElementById('config-horas-dia').value = config.horasDia ?? (currentUserGoals['Meta Horas Estudo'] || '4');
-      document.getElementById('config-topicos-dia').value = config.topicosDia ?? (currentUserGoals['Meta Diária Tópicos'] || '0');
+    function loadConfig() {
+      // Usa o SHEET_ID para isolar a configuração de cada planilha, evitando vazamento entre editais
+      const configKey = (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? `agendaConfig_${SHEET_ID}` : 'agendaConfig';
+      const config = JSON.parse(localStorage.getItem(configKey) || '{}');
+
+      // Verifica se deve importar as metas globais (padrão é sim, true)
+      const importarMetas = config.importarMetas !== undefined ? config.importarMetas : true;
+      document.getElementById('config-importar-metas').checked = importarMetas;
+
+      const fallbackDias = importarMetas ? (currentUserGoals['Meta Dias Estudo'] || '5') : '0';
+      const fallbackHoras = importarMetas ? (currentUserGoals['Meta Horas Estudo'] || '4') : '0';
+      const fallbackTopicos = importarMetas ? (currentUserGoals['Meta Diária Tópicos'] || '0') : '0';
+
+      document.getElementById('config-dias-semana').value = config.diasSemana ?? fallbackDias;
+      document.getElementById('config-horas-dia').value = config.horasDia ?? fallbackHoras;
+      document.getElementById('config-topicos-dia').value = config.topicosDia ?? fallbackTopicos;
 
       document.getElementById('config-periodo-manha').checked = config.periodos?.includes('manha') ?? true;
       document.getElementById('config-periodo-tarde').checked = config.periodos?.includes('tarde') ?? true;
@@ -9613,6 +9790,7 @@
 
     function saveConfig() {
       const config = {
+        importarMetas: document.getElementById('config-importar-metas').checked,
         diasSemana: document.getElementById('config-dias-semana').value,
         horasDia: document.getElementById('config-horas-dia').value,
         topicosDia: document.getElementById('config-topicos-dia').value,
@@ -9633,13 +9811,17 @@
         pomodoroCycles: document.getElementById('config-pomodoro-cycles').value
       };
 
-      localStorage.setItem('agendaConfig', JSON.stringify(config));
+      // Usa o SHEET_ID para isolar a configuração de cada planilha
+      const configKey = (typeof SHEET_ID !== 'undefined' && SHEET_ID) ? `agendaConfig_${SHEET_ID}` : 'agendaConfig';
+      localStorage.setItem(configKey, JSON.stringify(config));
       showNotification('Configurações salvas com sucesso!');
 
-      // Sincronizar campos com as Metas do Usuário
-      saveUserGoalSpecificField('Meta Diária Tópicos', config.topicosDia);
-      saveUserGoalSpecificField('Meta Horas Estudo', config.horasDia);
-      saveUserGoalSpecificField('Meta Dias Estudo', config.diasSemana);
+      // Sincronizar campos com as Metas Globais do Usuário APENAS se o checkbox estiver marcado
+      if (config.importarMetas) {
+        saveUserGoalSpecificField('Meta Diária Tópicos', config.topicosDia);
+        saveUserGoalSpecificField('Meta Horas Estudo', config.horasDia);
+        saveUserGoalSpecificField('Meta Dias Estudo', config.diasSemana);
+      }
 
       // >>>>> LÓGICA NOVA PARA ATUALIZAR O TIMER IMEDIATAMENTE <<<<<
       // Atualiza as variáveis globais do timer com os novos valores salvos
