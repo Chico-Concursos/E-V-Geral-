@@ -6570,10 +6570,11 @@
           if (newTopicIndex >= newTopics.length) break;
           const topic = newTopics[newTopicIndex++];
           const targetSlot = slotsForToday[slotIndex % slotsForToday.length];
+          const subtopicoStr = topic.Subtópicos && topic.Subtópicos !== '—' && topic.Subtópicos !== '-' ? ` - ${topic.Subtópicos}` : '';
           agenda.push({
             Data: today.toISOString().split('T')[0], DiaSemana: targetSlot.dia, Periodo: targetSlot.periodo,
-            Disciplina: topic.Disciplinas, TopicosSugeridos: `${topic.Seq} - ${topic.Tópicos}`,
-            Horas: SUGGESTED_DURATION_PER_TOPIC, Concluido: 'Não', Prioridade: 'Alta',
+            Disciplina: topic.Disciplinas, TopicosSugeridos: `${topic.Seq} - ${topic.Tópicos}${subtopicoStr}`,
+            Horas: SUGGESTED_DURATION_PER_TOPIC, Concluido: 'Não', Tipo: 'Novo', Prioridade: 'Alta',
             ID_Topico: topic.Seq, ID_Disciplina: topic.Disciplinas
           });
           slotIndex++;
@@ -6584,10 +6585,11 @@
           if (reviewTopicIndex >= reviewTopics.length) break;
           const topic = reviewTopics[reviewTopicIndex++];
           const targetSlot = slotsForToday[slotIndex % slotsForToday.length];
+          const subtopicoStr = topic.Subtópicos && topic.Subtópicos !== '—' && topic.Subtópicos !== '-' ? ` - ${topic.Subtópicos}` : '';
           agenda.push({
             Data: today.toISOString().split('T')[0], DiaSemana: targetSlot.dia, Periodo: targetSlot.periodo,
-            Disciplina: topic.Disciplinas, TopicosSugeridos: `${topic.Seq} - ${topic.Tópicos}`,
-            Horas: SUGGESTED_DURATION_PER_TOPIC, Concluido: 'Não', Prioridade: 'Média',
+            Disciplina: topic.Disciplinas, TopicosSugeridos: `${topic.Seq} - ${topic.Tópicos}${subtopicoStr}`,
+            Horas: SUGGESTED_DURATION_PER_TOPIC, Concluido: 'Não', Tipo: 'Revisão', Prioridade: 'Média',
             ID_Topico: topic.Seq, ID_Disciplina: topic.Disciplinas
           });
           slotIndex++;
@@ -8197,17 +8199,18 @@
                   <option value="">Selecione...</option>
                 </select>
               </div>
-              <div class="form-field" style="margin-bottom: 15px;">
-                <label>Horas:</label>
-                <input type="number" id="block-horas" min="0.5" max="8" step="0.5" value="2" style="width: 100%; padding: 8px; background: #222; color: #fff; border: 1px solid #555; border-radius: 4px;">
-              </div>
-              <div class="form-field" style="margin-bottom: 15px;">
-                <label>Prioridade:</label>
-                <select id="block-prioridade" style="width: 100%; padding: 8px; background: #222; color: #fff; border: 1px solid #555; border-radius: 4px;">
-                  <option value="Alta">Alta</option>
-                  <option value="Média" selected>Média</option>
-                  <option value="Baixa">Baixa</option>
-                </select>
+              <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div class="form-field" style="flex: 1;">
+                  <label>Horas:</label>
+                  <input type="number" id="block-horas" min="0.5" max="8" step="0.5" value="2" style="width: 100%; padding: 8px; background: #222; color: #fff; border: 1px solid #555; border-radius: 4px;">
+                </div>
+                <div class="form-field" style="flex: 1;">
+                  <label>Tipo de Estudo:</label>
+                  <select id="block-tipo" style="width: 100%; padding: 8px; background: #222; color: #fff; border: 1px solid #555; border-radius: 4px;">
+                    <option value="Novo" selected>★ Novo</option>
+                    <option value="Revisão">🔄 Revisão</option>
+                  </select>
+                </div>
               </div>
               <div class="modal-buttons">
                 <button class="btn-modal-cancel" onclick="closeBlockModal()">Cancelar</button>
@@ -8428,6 +8431,20 @@
         option.dataset.subtopic = topic.Subtópicos || '';
         topicoSelect.appendChild(option);
       });
+
+      // Detecção inteligente: sugere Novo ou Revisão de acordo com o histórico do tópico
+      topicoSelect.onchange = function () {
+        const selectedSeq = this.value;
+        if (!selectedSeq) return;
+        const topic = allTopics.find(t => String(t.Seq) === String(selectedSeq));
+        if (topic) {
+          const isCompleted = topic['Status Estudo'] === 'Concluído' || (parseInt(topic['Revisao Count']) || 0) > 0;
+          const tipoSelect = document.getElementById('block-tipo');
+          if (tipoSelect) {
+            tipoSelect.value = isCompleted ? 'Revisão' : 'Novo';
+          }
+        }
+      };
     }
 
     function openBlockModal(day, period) {
@@ -8444,7 +8461,7 @@
       document.getElementById('block-disciplina').value = '';
       document.getElementById('block-topico').innerHTML = '<option value="">Selecione um tópico</option>';
       document.getElementById('block-horas').value = '2';
-      document.getElementById('block-prioridade').value = 'Média';
+      document.getElementById('block-tipo').value = 'Novo';
     }
     function closeBlockModal() {
       document.getElementById('block-modal').style.display = 'none';
@@ -8456,7 +8473,7 @@
       const topicoSeq = topicoSelect.value;
       const topicoText = topicoSelect.options[topicoSelect.selectedIndex]?.text || '';
       const horas = document.getElementById('block-horas').value;
-      const prioridade = document.getElementById('block-prioridade').value;
+      const tipo = document.getElementById('block-tipo').value;
 
       if (!disciplina || !topicoSeq) {
         showNotification('Selecione uma disciplina e um tópico.', 'error');
@@ -8471,7 +8488,8 @@
         TopicosSugeridos: topicoText,
         Horas: horas,
         Concluido: 'Não', // Sempre assume 'Não' ao criar/editar
-        Prioridade: prioridade,
+        Tipo: tipo,
+        Prioridade: tipo === 'Novo' ? 'Alta' : 'Média', // Retrocompatibilidade
         ID_Topico: topicoSeq,
         ID_Disciplina: disciplina
       };
@@ -8533,10 +8551,11 @@
       const isFlashcardsConcluido = topic['Status Flashcards'] === 'Concluído';
       const revisaoCount = topic['Revisao Count'] || 0;
 
-      const isNewTopic = blockData.Prioridade === 'Alta';
+      const isNewTopic = blockData.Tipo ? (blockData.Tipo === 'Novo') : (blockData.Prioridade === 'Alta');
       const visualIndicator = isNewTopic
         ? `<span style="color: #4CAF50;"><i class="fas fa-star fa-fw"></i> NOVO</span>`
         : `<span style="color: #FFC107;"><i class="fas fa-sync-alt fa-fw"></i> REVISÃO</span>`;
+      const borderColor = isNewTopic ? '#4CAF50' : '#FFC107';
       // --- FIM DA SOLUÇÃO DEFINITIVA ---
 
       return `
@@ -8546,10 +8565,11 @@
             data-disciplina="${blockData.Disciplina}"
             data-topico="${topicId}"
             data-horas="${blockData.Horas}"
-            data-prioridade="${blockData.Prioridade}"
+            data-tipo="${isNewTopic ? 'Novo' : 'Revisão'}"
+            data-prioridade="${blockData.Prioridade || (isNewTopic ? 'Alta' : 'Média')}"
             draggable="true"
             ondragstart="dragStartHandler(event)"
-            style="background: #1a1a1a; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 5px solid ${getPriorityColor(blockData.Prioridade)}; cursor: move;">
+            style="background: #1a1a1a; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 5px solid ${borderColor}; cursor: move;">
             
             <div style="display: flex; justify-content: space-between; align-items: start; gap: 10px;">
                 <div style="flex: 1;">
@@ -8575,13 +8595,11 @@
     `;
     }
 
-    function getPriorityColor(prioridade) {
-      switch (prioridade) {
-        case 'Alta': return '#ff4444';
-        case 'Média': return '#ffaa00';
-        case 'Baixa': return '#44ff44';
-        default: return '#D2AC47';
-      }
+    function getPriorityColor(tipoOrPrioridade) {
+      if (tipoOrPrioridade === 'Novo' || tipoOrPrioridade === 'Alta') return '#4CAF50';
+      if (tipoOrPrioridade === 'Revisão' || tipoOrPrioridade === 'Revisao' || tipoOrPrioridade === 'Média') return '#FFC107';
+      if (tipoOrPrioridade === 'Baixa') return '#2196F3';
+      return '#FFC107';
     }
     function getCorrectDateForDayOfWeek(dayName) {
       const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -8653,7 +8671,7 @@
       const disciplina = block.dataset.disciplina;
       const topico = block.dataset.topico;
       const horas = block.dataset.horas;
-      const prioridade = block.dataset.prioridade;
+      const tipo = block.dataset.tipo || (block.dataset.prioridade === 'Alta' ? 'Novo' : 'Revisão');
 
       // Encontrar dia e período atual do bloco
       const slot = block.closest('.time-slot');
@@ -8670,6 +8688,8 @@
       document.getElementById('block-modal').style.display = 'flex';
 
       // Preencher formulário
+      document.getElementById('block-dia').value = day;
+      document.getElementById('block-periodo').value = period;
       document.getElementById('block-disciplina').value = disciplina;
       populateTopicDropdown(disciplina);
 
@@ -8677,7 +8697,7 @@
       setTimeout(() => {
         document.getElementById('block-topico').value = topico;
         document.getElementById('block-horas').value = horas;
-        document.getElementById('block-prioridade').value = prioridade;
+        document.getElementById('block-tipo').value = tipo;
       }, 100);
     }
 
@@ -8772,10 +8792,12 @@
       // Carrega os tópicos corretos para a disciplina
       populateTopicDropdown(blockData.Disciplina);
 
+      const tipo = blockData.Tipo || (blockData.Prioridade === 'Alta' ? 'Novo' : 'Revisão');
+
       setTimeout(() => {
         document.getElementById('block-topico').value = blockData.ID_Topico;
         document.getElementById('block-horas').value = blockData.Horas;
-        document.getElementById('block-prioridade').value = blockData.Prioridade;
+        document.getElementById('block-tipo').value = tipo;
       }, 100); // Um pequeno atraso para garantir que os tópicos foram carregados
     }
     // ==================== CONCLUSÃO INTEGRADA ====================
@@ -8857,6 +8879,7 @@
               // Busca o elemento do título de forma segura usando uma classe
               const topicoElement = block.querySelector('.agenda-block-title');
               const topicoNome = topicoElement ? topicoElement.textContent : '';
+              const tipo = block.dataset.tipo || (block.dataset.prioridade === 'Alta' ? 'Novo' : 'Revisão');
 
               agendaData.push({
                 Data: getCorrectDateForDayOfWeek(day),
@@ -8866,7 +8889,8 @@
                 TopicosSugeridos: topicoNome,
                 Horas: block.dataset.horas,
                 Concluido: concluido ? 'Sim' : 'Não',
-                Prioridade: block.dataset.prioridade,
+                Tipo: tipo,
+                Prioridade: block.dataset.prioridade || (tipo === 'Novo' ? 'Alta' : 'Média'),
                 ID_Topico: topicoSeq,
                 ID_Disciplina: block.dataset.disciplina
               });
@@ -9022,10 +9046,11 @@
         for (let i = 0; i < totalNewTopicsToSchedule && i < newTopics.length; i++) {
           const topic = newTopics[i];
           const targetSlot = availableSlots[currentSlotIndex % availableSlots.length];
+          const subtopicoStr = topic.Subtópicos && topic.Subtópicos !== '—' && topic.Subtópicos !== '-' ? ` - ${topic.Subtópicos}` : '';
           newAgendaItems.push({
             Data: getCorrectDateForDayOfWeek(targetSlot.dia), DiaSemana: targetSlot.dia, Periodo: targetSlot.periodo,
-            Disciplina: topic.Disciplinas, TopicosSugeridos: `${topic.Seq} - ${topic.Tópicos}`,
-            Horas: 1, Concluido: 'Não', Prioridade: 'Alta',
+            Disciplina: topic.Disciplinas, TopicosSugeridos: `${topic.Seq} - ${topic.Tópicos}${subtopicoStr}`,
+            Horas: 1, Concluido: 'Não', Tipo: 'Novo', Prioridade: 'Alta',
             ID_Topico: topic.Seq, ID_Disciplina: topic.Disciplinas
           });
           currentSlotIndex++;
@@ -9034,10 +9059,11 @@
         for (let i = 0; i < totalRevisionsToSchedule && i < reviewTopics.length; i++) {
           const topic = reviewTopics[i];
           const targetSlot = availableSlots[currentSlotIndex % availableSlots.length];
+          const subtopicoStr = topic.Subtópicos && topic.Subtópicos !== '—' && topic.Subtópicos !== '-' ? ` - ${topic.Subtópicos}` : '';
           newAgendaItems.push({
             Data: getCorrectDateForDayOfWeek(targetSlot.dia), DiaSemana: targetSlot.dia, Periodo: targetSlot.periodo,
-            Disciplina: topic.Disciplinas, TopicosSugeridos: `${topic.Seq} - ${topic.Tópicos}`,
-            Horas: 1, Concluido: 'Não', Prioridade: 'Média',
+            Disciplina: topic.Disciplinas, TopicosSugeridos: `${topic.Seq} - ${topic.Tópicos}${subtopicoStr}`,
+            Horas: 1, Concluido: 'Não', Tipo: 'Revisão', Prioridade: 'Média',
             ID_Topico: topic.Seq, ID_Disciplina: topic.Disciplinas
           });
           currentSlotIndex++;
@@ -9394,7 +9420,7 @@
                 const uid = `${item.Data}|${item.Disciplina}|${item.TopicosSugeridos}`;
                 const safeUid = uid.replace(/'/g, "\\'");
                 return `
-                <div style="background: #3a3a3a; color: #fff; margin-top: 2px; padding: 4px; border-radius: 3px; border-left: 3px solid ${getPriorityColor(item.Prioridade)};">
+                <div style="background: #3a3a3a; color: #fff; margin-top: 2px; padding: 4px; border-radius: 3px; border-left: 3px solid ${getPriorityColor(item.Tipo || item.Prioridade)};">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.TopicosSugeridos}">
                       ${item.Disciplina} (${item.Horas}h)
